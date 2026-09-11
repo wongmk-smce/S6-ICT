@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMI Health Studio & AI Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        },
+                        ai: {
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+        }
+
+        /* Custom range slider styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 9999px;
+            border: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 22px;
+            width: 22px;
+            border-radius: 50%;
+            background: #22c55e;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -7px;
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            background: #4ade80;
+        }
+
+        /* Smooth tab transitions */
+        .tab-btn.active {
+            border-bottom: 2px solid #22c55e;
+            color: #22c55e;
+            font-weight: 600;
+        }
+
+        #toast {
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .gauge-needle {
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: bottom center;
+        }
+
+        /* Pulse animation for AI effects */
+        @keyframes ai-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(139, 92, 246, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(139, 92, 246, 0.6); }
+        }
+        .ai-card-glow {
+            animation: ai-glow 3s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-slate-100 antialiased p-3 sm:p-6 md:p-8 flex flex-col justify-between">
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-5 right-5 z-50 transform translate-y-[-150%] opacity-0 bg-slate-800 text-white px-5 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center space-x-3 pointer-events-none">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <span id="toast-msg" class="text-sm font-medium">Notification message</span>
+    </div>
+
+    <div class="max-w-6xl mx-auto w-full">
+        <!-- Header -->
+        <header class="flex flex-col lg:flex-row items-center justify-between gap-4 mb-8 bg-slate-800/60 backdrop-blur-md p-5 rounded-2xl border border-slate-700/50 shadow-xl">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-center text-emerald-400 text-2xl shadow-inner">
+                    <i class="fa-solid fa-heart-pulse animate-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                        BMI Health Studio
+                        <span class="text-xs font-semibold bg-violet-500/20 text-violet-300 border border-violet-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> AI Powered
+                        </span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Calculate BMI, track goals, and consult your Gemini AI Health Assistant</p>
+                </div>
+            </div>
+
+            <!-- View Switcher Tabs -->
+            <div class="flex flex-wrap bg-slate-900/80 p-1.5 rounded-xl border border-slate-700/60 w-full lg:w-auto gap-1">
+                <button id="nav-calc" onclick="switchTab('calc')" class="flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all bg-emerald-600 text-white shadow-md">
+                    <i class="fa-solid fa-calculator mr-1"></i> Calc
+                </button>
+                <button id="nav-aicoach" onclick="switchTab('aicoach')" class="flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-robot text-violet-400 mr-1"></i> AI Coach
+                </button>
+                <button id="nav-mealscan" onclick="switchTab('mealscan')" class="flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-camera-retro text-amber-400 mr-1"></i> AI Meal Scan
+                </button>
+                <button id="nav-history" onclick="switchTab('history')" class="flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> History
+                </button>
+                <button id="nav-guide" onclick="switchTab('guide')" class="flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-book-medical mr-1"></i> Guide
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main>
+            <!-- SECTION 1: CALCULATOR TAB -->
+            <div id="tab-calc-view" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Input Panel (Left Column) -->
+                <div class="lg:col-span-6 bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-slate-700/60 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <!-- Unit Selector & Gender Switch -->
+                        <div class="flex flex-wrap gap-4 items-center justify-between pb-5 mb-5 border-b border-slate-700/50">
+                            <!-- Unit System Toggle -->
+                            <div class="inline-flex p-1 bg-slate-900 rounded-xl border border-slate-700">
+                                <button id="unit-metric-btn" onclick="setUnitSystem('metric')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-emerald-500 text-slate-950 shadow">
+                                    Metric (cm, kg)
+                                </button>
+                                <button id="unit-imperial-btn" onclick="setUnitSystem('imperial')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white">
+                                    Imperial (ft/in, lbs)
+                                </button>
+                            </div>
+
+                            <!-- Gender Select -->
+                            <div class="flex items-center space-x-2 bg-slate-900 p-1 rounded-xl border border-slate-700">
+                                <button id="gender-male" onclick="setGender('male')" class="px-3 py-1.5 rounded-lg text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-mars"></i> Male
+                                </button>
+                                <button id="gender-female" onclick="setGender('female')" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white flex items-center gap-1.5">
+                                    <i class="fa-solid fa-venus"></i> Female
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Age Input -->
+                        <div class="mb-5">
+                            <div class="flex justify-between items-center mb-2">
+                                <label for="age-input" class="text-sm font-medium text-slate-300 flex items-center gap-2">
+                                    <i class="fa-regular fa-calendar text-emerald-400"></i> Age
+                                </label>
+                                <span class="text-xs text-slate-400">10 – 120 yrs</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <input type="range" id="age-slider" min="10" max="100" value="30" oninput="syncAgeFromSlider(this.value)" class="flex-1">
+                                <div class="relative w-20">
+                                    <input type="number" id="age-input" min="10" max="120" value="30" oninput="syncAgeFromInput(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-right font-semibold text-emerald-400 focus:outline-none focus:border-emerald-500 text-sm">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- HEIGHT INPUT BLOCK -->
+                        <div id="height-metric-block" class="mb-6">
+                            <div class="flex justify-between items-center mb-2">
+                                <label for="height-cm-input" class="text-sm font-medium text-slate-300 flex items-center gap-2">
+                                    <i class="fa-solid fa-ruler-vertical text-emerald-400"></i> Height (cm)
+                                </label>
+                                <span class="text-lg font-bold text-emerald-400" id="height-cm-display">175 <span class="text-xs font-normal text-slate-400">cm</span></span>
+                            </div>
+                            <input type="range" id="height-cm-slider" min="100" max="230" value="175" oninput="updateMetricHeight(this.value)" class="mb-3">
+                            <div class="flex items-center space-x-2">
+                                <button onclick="adjustValue('height-cm-slider', -1)" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-white w-9 h-9 rounded-lg font-bold text-sm transition-all">-</button>
+                                <input type="number" id="height-cm-input" min="50" max="250" value="175" oninput="updateMetricHeight(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center font-semibold text-slate-100 focus:outline-none focus:border-emerald-500 text-sm">
+                                <button onclick="adjustValue('height-cm-slider', 1)" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-white w-9 h-9 rounded-lg font-bold text-sm transition-all">+</button>
+                            </div>
+                        </div>
+
+                        <div id="height-imperial-block" class="mb-6 hidden">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-sm font-medium text-slate-300 flex items-center gap-2">
+                                    <i class="fa-solid fa-ruler-vertical text-emerald-400"></i> Height (ft / in)
+                                </label>
+                                <span class="text-lg font-bold text-emerald-400" id="height-ft-display">5 ft 9 in</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label for="height-ft-input" class="text-xs text-slate-400 mb-1 block">Feet</label>
+                                    <input type="number" id="height-ft-input" min="2" max="8" value="5" oninput="updateImperialHeight()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center font-semibold text-slate-100 focus:outline-none focus:border-emerald-500 text-sm">
+                                </div>
+                                <div>
+                                    <label for="height-in-input" class="text-xs text-slate-400 mb-1 block">Inches</label>
+                                    <input type="number" id="height-in-input" min="0" max="11" value="9" oninput="updateImperialHeight()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center font-semibold text-slate-100 focus:outline-none focus:border-emerald-500 text-sm">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- WEIGHT INPUT BLOCK -->
+                        <div id="weight-metric-block" class="mb-6">
+                            <div class="flex justify-between items-center mb-2">
+                                <label for="weight-kg-input" class="text-sm font-medium text-slate-300 flex items-center gap-2">
+                                    <i class="fa-solid fa-weight-scale text-emerald-400"></i> Weight (kg)
+                                </label>
+                                <span class="text-lg font-bold text-emerald-400" id="weight-kg-display">70 <span class="text-xs font-normal text-slate-400">kg</span></span>
+                            </div>
+                            <input type="range" id="weight-kg-slider" min="30" max="200" step="0.5" value="70" oninput="updateMetricWeight(this.value)" class="mb-3">
+                            <div class="flex items-center space-x-2">
+                                <button onclick="adjustValue('weight-kg-slider', -0.5)" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-white w-9 h-9 rounded-lg font-bold text-sm transition-all">-</button>
+                                <input type="number" id="weight-kg-input" step="0.1" min="20" max="300" value="70" oninput="updateMetricWeight(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center font-semibold text-slate-100 focus:outline-none focus:border-emerald-500 text-sm">
+                                <button onclick="adjustValue('weight-kg-slider', 0.5)" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-white w-9 h-9 rounded-lg font-bold text-sm transition-all">+</button>
+                            </div>
+                        </div>
+
+                        <div id="weight-imperial-block" class="mb-6 hidden">
+                            <div class="flex justify-between items-center mb-2">
+                                <label for="weight-lbs-input" class="text-sm font-medium text-slate-300 flex items-center gap-2">
+                                    <i class="fa-solid fa-weight-scale text-emerald-400"></i> Weight (lbs)
+                                </label>
+                                <span class="text-lg font-bold text-emerald-400" id="weight-lbs-display">154 <span class="text-xs font-normal text-slate-400">lbs</span></span>
+                            </div>
+                            <input type="range" id="weight-lbs-slider" min="60" max="450" step="1" value="154" oninput="updateImperialWeight(this.value)" class="mb-3">
+                            <div class="flex items-center space-x-2">
+                                <button onclick="adjustValue('weight-lbs-slider', -1)" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-white w-9 h-9 rounded-lg font-bold text-sm transition-all">-</button>
+                                <input type="number" id="weight-lbs-input" step="0.5" min="40" max="600" value="154" oninput="updateImperialWeight(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center font-semibold text-slate-100 focus:outline-none focus:border-emerald-500 text-sm">
+                                <button onclick="adjustValue('weight-lbs-slider', 1)" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-white w-9 h-9 rounded-lg font-bold text-sm transition-all">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Reset Button -->
+                    <div class="pt-3 border-t border-slate-700/50 flex gap-2">
+                        <button onclick="resetDefaults()" class="w-full py-2.5 rounded-xl bg-slate-700/60 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-rotate-left"></i> Reset to Defaults
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Results & Analysis Panel (Right Column) -->
+                <div class="lg:col-span-6 space-y-6">
+                    
+                    <!-- Primary BMI Card -->
+                    <div class="bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-slate-700/60 shadow-xl relative overflow-hidden">
+                        
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xs uppercase tracking-wider text-slate-400 font-bold">Your BMI Analysis</span>
+                            <span id="bmi-status-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                Normal Weight
+                            </span>
+                        </div>
+
+                        <!-- Score Display -->
+                        <div class="flex items-baseline justify-center space-x-2 my-2">
+                            <span id="bmi-score" class="text-6xl sm:text-7xl font-extrabold tracking-tight text-white">22.9</span>
+                            <span class="text-sm font-medium text-slate-400">kg/m²</span>
+                        </div>
+
+                        <!-- Visual Spectrum Meter -->
+                        <div class="mt-6">
+                            <div class="relative h-4 rounded-full w-full flex overflow-hidden shadow-inner bg-slate-900">
+                                <div class="h-full bg-blue-500" style="width: 18.5%" title="Underweight (< 18.5)"></div>
+                                <div class="h-full bg-emerald-500" style="width: 25%" title="Normal (18.5 - 24.9)"></div>
+                                <div class="h-full bg-amber-500" style="width: 20%" title="Overweight (25 - 29.9)"></div>
+                                <div class="h-full bg-rose-500" style="width: 36.5%" title="Obese (≥ 30)"></div>
+                            </div>
+
+                            <div class="relative h-6 mt-1">
+                                <div id="meter-pointer" class="absolute top-0 transform -translate-x-1/2 transition-all duration-300 flex flex-col items-center" style="left: 45%;">
+                                    <i class="fa-solid fa-caret-up text-white text-lg leading-none"></i>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-4 text-[10px] text-center font-semibold text-slate-400 mt-1">
+                                <span class="text-blue-400">&lt; 18.5<br>Under</span>
+                                <span class="text-emerald-400">18.5–24.9<br>Normal</span>
+                                <span class="text-amber-400">25–29.9<br>Over</span>
+                                <span class="text-rose-400">≥ 30.0<br>Obese</span>
+                            </div>
+                        </div>
+
+                        <!-- Audio TTS Voice Briefing Button -->
+                        <div class="mt-5 flex gap-2">
+                            <button id="tts-audio-btn" onclick="generateAIVoiceBriefing()" class="flex-1 py-2.5 px-3 rounded-xl bg-violet-600/30 hover:bg-violet-600/50 border border-violet-500/40 text-violet-200 font-semibold text-xs transition-all flex items-center justify-center gap-2">
+                                <i id="tts-icon" class="fa-solid fa-volume-high text-violet-400"></i>
+                                <span id="tts-btn-text">Listen to AI Voice Summary</span>
+                            </button>
+                            <button onclick="saveCurrentRecord()" class="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md">
+                                <i class="fa-solid fa-bookmark"></i> Save Log
+                            </button>
+                        </div>
+
+                        <!-- Health Summary Recommendation -->
+                        <div class="mt-4 p-4 rounded-xl bg-slate-900/80 border border-slate-700/80 text-xs leading-relaxed text-slate-300 flex items-start space-x-3">
+                            <i id="summary-icon" class="fa-solid fa-circle-info text-emerald-400 text-base mt-0.5 shrink-0"></i>
+                            <div>
+                                <h4 id="summary-title" class="font-bold text-slate-100 text-sm mb-1">Optimal Weight Range</h4>
+                                <p id="summary-desc">Your BMI is within the healthy range. Maintaining a balanced diet and regular exercise routine helps preserve cardiovascular health and metabolic wellness.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Key Statistics Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <div class="bg-slate-800/80 backdrop-blur-md p-4 rounded-2xl border border-slate-700/60">
+                            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Ideal Weight</span>
+                            <div id="ideal-weight-val" class="text-base font-bold text-emerald-400">56.7 – 76.2</div>
+                            <span id="ideal-weight-unit" class="text-[10px] text-slate-400">kg (for your height)</span>
+                        </div>
+
+                        <div class="bg-slate-800/80 backdrop-blur-md p-4 rounded-2xl border border-slate-700/60">
+                            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Est. BMR</span>
+                            <div id="bmr-val" class="text-base font-bold text-sky-400">1,680</div>
+                            <span class="text-[10px] text-slate-400">kcal/day (at rest)</span>
+                        </div>
+
+                        <div class="col-span-2 sm:col-span-1 bg-slate-800/80 backdrop-blur-md p-4 rounded-2xl border border-slate-700/60">
+                            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">BMI Prime</span>
+                            <div id="prime-val" class="text-base font-bold text-amber-400">0.92</div>
+                            <span class="text-[10px] text-slate-400">Ratio to limit (25)</span>
+                        </div>
+                    </div>
+
+                    <!-- AI Coach Quick Access Banner -->
+                    <div class="p-4 rounded-2xl bg-gradient-to-r from-violet-900/40 via-purple-900/30 to-slate-800 border border-violet-500/30 flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-violet-500/20 text-violet-300 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-violet-200">Want a custom diet & fitness plan?</h4>
+                                <p class="text-[11px] text-slate-400">Ask Gemini AI Health Coach for tailored guidance.</p>
+                            </div>
+                        </div>
+                        <button onclick="switchTab('aicoach')" class="px-3.5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold transition-all shadow-lg shrink-0">
+                            Open Coach
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECTION 2: AI HEALTH COACH TAB (Gemini Integration) -->
+            <div id="tab-aicoach-view" class="hidden space-y-6">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <!-- Left Column: Goal Selection & Plan Generator -->
+                    <div class="lg:col-span-5 space-y-6">
+                        <div class="bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-slate-700/60 shadow-xl border-l-4 border-l-violet-500">
+                            <div class="flex items-center space-x-3 mb-4">
+                                <div class="w-10 h-10 rounded-xl bg-violet-500/20 text-violet-400 flex items-center justify-center text-xl">
+                                    <i class="fa-solid fa-robot"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-lg font-bold text-white">Gemini AI Health Coach</h2>
+                                    <p class="text-xs text-slate-400">Personalized fitness & dietary strategy</p>
+                                </div>
+                            </div>
+
+                            <!-- Goal selector -->
+                            <div class="mb-4">
+                                <label class="block text-xs font-semibold text-slate-300 mb-2">Primary Fitness Goal:</label>
+                                <select id="ai-goal-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-violet-500">
+                                    <option value="weight_loss">Fat Loss & Calorie Deficit</option>
+                                    <option value="maintenance">Weight Maintenance & Lean Tone</option>
+                                    <option value="muscle_gain">Muscle Building & Hypertrophy</option>
+                                    <option value="stamina">Cardiovascular Stamina & General Health</option>
+                                </select>
+                            </div>
+
+                            <!-- Dietary Preferences -->
+                            <div class="mb-5">
+                                <label class="block text-xs font-semibold text-slate-300 mb-2">Dietary Preference:</label>
+                                <select id="ai-diet-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-violet-500">
+                                    <option value="balanced">Balanced Whole Foods</option>
+                                    <option value="high_protein">High Protein / Gym Focus</option>
+                                    <option value="vegetarian">Vegetarian / Plant-Based</option>
+                                    <option value="keto">Low Carb / Keto</option>
+                                    <option value="mediterranean">Mediterranean Diet</option>
+                                </select>
+                            </div>
+
+                            <button onclick="generateAICustomPlan()" class="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold text-xs transition-all shadow-lg shadow-violet-900/40 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-sparkles"></i> Generate AI Action Plan
+                            </button>
+                        </div>
+
+                        <!-- AI Motivational Meal Visualizer -->
+                        <div class="bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-slate-700/60 shadow-xl">
+                            <h3 class="text-sm font-bold text-white mb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-image text-purple-400"></i> AI Meal Visualizer
+                            </h3>
+                            <p class="text-xs text-slate-400 mb-4">Generate an inspirational photo of a healthy dish customized for your target.</p>
+                            <button onclick="generateAIMealImage()" class="w-full py-2.5 rounded-xl bg-slate-700/80 hover:bg-slate-700 text-violet-300 border border-violet-500/30 text-xs font-semibold transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-palette"></i> Visualize Ideal Healthy Meal
+                            </button>
+                            <div id="ai-image-container" class="mt-4 hidden flex flex-col items-center">
+                                <div id="ai-image-loading" class="text-center py-6 hidden">
+                                    <i class="fa-solid fa-circle-notch fa-spin text-2xl text-violet-400 mb-2"></i>
+                                    <p class="text-xs text-slate-400">Generating image with Gemini AI...</p>
+                                </div>
+                                <img id="ai-generated-img" class="w-full rounded-xl border border-slate-700 shadow-md hidden object-cover max-h-56" alt="AI Generated Dish">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: AI Plan Display & Interactive Q&A Chat -->
+                    <div class="lg:col-span-7 space-y-6">
+                        
+                        <!-- Structured AI Generated Action Plan Container -->
+                        <div class="bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-slate-700/60 shadow-xl min-h-[220px]">
+                            <div class="flex items-center justify-between pb-3 border-b border-slate-700/60 mb-4">
+                                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-list-check text-emerald-400"></i> AI Health Action Strategy
+                                </h3>
+                                <span id="ai-plan-status" class="text-[10px] font-semibold text-slate-400">Ready to generate</span>
+                            </div>
+
+                            <div id="ai-plan-output" class="text-xs text-slate-300 leading-relaxed space-y-3">
+                                <div class="text-center py-10 text-slate-500">
+                                    <i class="fa-solid fa-brain text-3xl mb-2 text-slate-600 block"></i>
+                                    Click "Generate AI Action Plan" to calculate a customized caloric intake, macro split, workout breakdown, and nutrition recommendations based on your current BMI.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Interactive AI Chat Box -->
+                        <div class="bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-slate-700/60 shadow-xl">
+                            <h3 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-comments text-violet-400"></i> Ask Your AI Health Coach
+                            </h3>
+                            
+                            <!-- Prompt Quick Chips -->
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <button onclick="sendQuickPrompt('How many grams of protein should I eat daily for my weight?')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-700 text-[11px] text-slate-300 border border-slate-700 transition-all">
+                                    🥩 Daily protein target?
+                                </button>
+                                <button onclick="sendQuickPrompt('Suggest a 15-minute high-burn workout for home.')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-700 text-[11px] text-slate-300 border border-slate-700 transition-all">
+                                    🏃 15-min home workout
+                                </button>
+                                <button onclick="sendQuickPrompt('How long will it take to reach my healthy target weight?')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-700 text-[11px] text-slate-300 border border-slate-700 transition-all">
+                                    ⏱️ Timeline to target weight?
+                                </button>
+                            </div>
+
+                            <!-- Chat Log -->
+                            <div id="ai-chat-history" class="h-48 overflow-y-auto bg-slate-900/90 rounded-xl p-3 border border-slate-700/80 mb-3 space-y-3 text-xs">
+                                <div class="bg-violet-900/30 border border-violet-500/30 p-2.5 rounded-lg text-slate-200">
+                                    <strong class="text-violet-300 block mb-1">AI Coach:</strong>
+                                    Hello! I'm synchronized with your BMI profile. How can I help you fine-tune your diet or workout routine today?
+                                </div>
+                            </div>
+
+                            <!-- Input Row -->
+                            <div class="flex gap-2">
+                                <input type="text" id="ai-chat-input" placeholder="Ask anything about nutrition, calories, or training..." onkeydown="if(event.key==='Enter') sendAIChatMessage()" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-violet-500">
+                                <button onclick="sendAIChatMessage()" class="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold transition-all">
+                                    Send
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- SECTION 3: AI MEAL SCANNER TAB (Multimodal Vision API) -->
+            <div id="tab-mealscan-view" class="hidden space-y-6">
+                <div class="bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-slate-700/60 shadow-xl">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-700/50 gap-4 mb-6">
+                        <div>
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-camera-retro text-amber-400"></i> Gemini AI Meal & Calorie Vision Analyzer
+                            </h2>
+                            <p class="text-xs text-slate-400">Upload or capture a photo of your meal for instant AI macro breakdown</p>
+                        </div>
+                        <button onclick="loadDemoMealImage()" class="px-3.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 text-xs font-semibold transition-all">
+                            <i class="fa-solid fa-vial mr-1"></i> Try Demo Meal Photo
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <!-- Image Upload Box -->
+                        <div class="lg:col-span-5 flex flex-col justify-between space-y-4">
+                            <div id="drop-zone" class="border-2 border-dashed border-slate-600 hover:border-amber-400 rounded-2xl p-6 text-center cursor-pointer transition-all bg-slate-900/60 flex flex-col items-center justify-center min-h-[220px]" onclick="document.getElementById('meal-file-input').click()">
+                                <input type="file" id="meal-file-input" accept="image/*" class="hidden" onchange="handleMealImageUpload(this.files[0])">
+                                <i class="fa-solid fa-cloud-arrow-up text-3xl text-amber-400 mb-2"></i>
+                                <p class="text-xs font-semibold text-slate-200">Click to upload meal photo</p>
+                                <p class="text-[10px] text-slate-500 mt-1">PNG, JPG, or WEBP supported</p>
+                            </div>
+
+                            <!-- Image Preview -->
+                            <div id="meal-preview-box" class="relative hidden rounded-2xl overflow-hidden border border-slate-700 max-h-56">
+                                <img id="meal-preview-img" class="w-full h-full object-cover" alt="Meal Preview">
+                                <button onclick="clearMealPhoto()" class="absolute top-2 right-2 bg-slate-900/80 hover:bg-rose-600 text-white w-7 h-7 rounded-full text-xs flex items-center justify-center transition-colors">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+
+                            <button id="analyze-meal-btn" onclick="analyzeMealWithAI()" disabled class="w-full py-3 rounded-xl bg-amber-600 opacity-50 cursor-not-allowed hover:bg-amber-500 text-white font-semibold text-xs transition-all shadow-lg flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-microscope"></i> Analyze Meal Nutrients
+                            </button>
+                        </div>
+
+                        <!-- Vision Result Display -->
+                        <div class="lg:col-span-7 bg-slate-900/80 p-5 rounded-2xl border border-slate-700/80 min-h-[250px] flex flex-col justify-between">
+                            <div id="meal-analysis-content">
+                                <div class="text-center py-12 text-slate-500">
+                                    <i class="fa-solid fa-utensils text-3xl mb-2 text-slate-600 block"></i>
+                                    Upload a photo or click "Try Demo Meal Photo" to analyze calorie density, macros, and fitness alignment.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4: HISTORY LOG TAB -->
+            <div id="tab-history-view" class="hidden space-y-6">
+                <!-- Chart & Stats Summary -->
+                <div class="bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-slate-700/60 shadow-xl">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-700/50 gap-4 mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-chart-line text-emerald-400"></i> BMI Progress Visualizer
+                            </h2>
+                            <p class="text-xs text-slate-400">Historical trend of recorded measurements</p>
+                        </div>
+                        <button onclick="clearHistoryLog()" class="px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 text-xs font-semibold transition-all">
+                            <i class="fa-solid fa-trash-can mr-1"></i> Clear Log
+                        </button>
+                    </div>
+
+                    <!-- Canvas Line Chart -->
+                    <div class="relative h-56 w-full">
+                        <canvas id="historyChart" class="w-full h-full"></canvas>
+                        <div id="no-chart-msg" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 bg-slate-900/60 rounded-xl">
+                            <i class="fa-solid fa-chart-simple text-3xl mb-2"></i>
+                            <p class="text-xs font-medium">No history recorded yet. Save results from the calculator!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Saved Log Entries -->
+                <div class="bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-slate-700/60 shadow-xl">
+                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider mb-4">Saved Log Entries</h3>
+                    <div id="history-list" class="space-y-3">
+                        <!-- Entries dynamically populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 5: GUIDE TAB -->
+            <div id="tab-guide-view" class="hidden space-y-6">
+                <div class="bg-slate-800/80 backdrop-blur-md p-6 rounded-2xl border border-slate-700/60 shadow-xl">
+                    <h2 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-emerald-400"></i> WHO Body Mass Index Standards
+                    </h2>
+                    <p class="text-xs text-slate-300 leading-relaxed mb-6">
+                        Body Mass Index (BMI) is a simple index of weight-for-height that is commonly used to classify underweight, overweight, and obesity in adults. It is defined as a person's weight in kilograms divided by the square of their height in meters (kg/m²).
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 rounded-xl bg-slate-900 border-l-4 border-blue-500">
+                            <div class="flex items-center justify-between mb-1">
+                                <h3 class="font-bold text-blue-400 text-sm">Underweight</h3>
+                                <span class="text-xs font-mono bg-blue-500/10 px-2 py-0.5 rounded text-blue-300">&lt; 18.5</span>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">May indicate malnutrition or underlying medical conditions. Consultation with a nutritionist is recommended.</p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-slate-900 border-l-4 border-emerald-500">
+                            <div class="flex items-center justify-between mb-1">
+                                <h3 class="font-bold text-emerald-400 text-sm">Normal Weight</h3>
+                                <span class="text-xs font-mono bg-emerald-500/10 px-2 py-0.5 rounded text-emerald-300">18.5 – 24.9</span>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">Lowest statistical risk for cardiovascular diseases, type 2 diabetes, and hypertension.</p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-slate-900 border-l-4 border-amber-500">
+                            <div class="flex items-center justify-between mb-1">
+                                <h3 class="font-bold text-amber-400 text-sm">Overweight</h3>
+                                <span class="text-xs font-mono bg-amber-500/10 px-2 py-0.5 rounded text-amber-300">25.0 – 29.9</span>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">Associated with moderate increase in metabolic risks. Lifestyle modifications are beneficial.</p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-slate-900 border-l-4 border-rose-500">
+                            <div class="flex items-center justify-between mb-1">
+                                <h3 class="font-bold text-rose-400 text-sm">Obese Class I-III</h3>
+                                <span class="text-xs font-mono bg-rose-500/10 px-2 py-0.5 rounded text-rose-300">≥ 30.0</span>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed">Significantly elevated risk for chronic health issues. Structured weight management programs recommended.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center text-xs text-slate-500 py-4">
+            BMI Health Studio & AI Coach &copy; 2026. Informational guidance powered by Gemini API.
+        </footer>
+    </div>
+
+    <!-- Application JavaScript Engine -->
+    <script>
+        const state = {
+            unit: 'metric',
+            gender: 'male',
+            age: 30,
+            heightCm: 175,
+            weightKg: 70,
+            bmi: 22.9,
+            history: [],
+            uploadedMealBase64: null,
+            uploadedMealMime: null
+        };
+
+        // Web Audio Synthesizer
+        const AudioFX = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+            },
+            playTap() {
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.05);
+                    gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.05);
+                } catch(e) {}
+            },
+            playSuccess() {
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, this.ctx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.08);
+                    osc.frequency.setValueAtTime(783.99, this.ctx.currentTime + 0.16);
+                    gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.3);
+                } catch(e) {}
+            }
+        };
+
+        const GEMINI_API_KEY = ""; // Runtime automatically injected by Canvas if empty
+
+        async function fetchWithBackoff(url, options, maxRetries = 3) {
+            let delay = 1000;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const res = await fetch(url, options);
+                    if (res.ok) return res;
+                } catch (e) {
+                    if (i === maxRetries - 1) throw e;
+                }
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
+            }
+            throw new Error("Failed after maximum retries");
+        }
+
+        let currentAudio = null;
+
+        async function generateAIVoiceBriefing() {
+            const btn = document.getElementById('tts-audio-btn');
+            const icon = document.getElementById('tts-icon');
+            const btnText = document.getElementById('tts-btn-text');
+
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+                btnText.textContent = "Listen to AI Voice Summary";
+                icon.className = "fa-solid fa-volume-high text-violet-400";
+                return;
+            }
+
+            btnText.textContent = "Generating Voice...";
+            icon.className = "fa-solid fa-circle-notch fa-spin text-violet-400";
+
+            const category = document.getElementById('bmi-status-badge').textContent.trim();
+            const promptText = `Speak in a warm, encouraging health coach tone: Hello! Your BMI is ${state.bmi}, which falls into the ${category} category. For your height of ${state.heightCm} cm, maintaining a balanced routine will keep your body energized and resilient.`;
+
+            try {
+                const payload = {
+                    contents: [{ parts: [{ text: promptText }] }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } }
+                        }
+                    }
+                };
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${GEMINI_API_KEY}`;
+                const response = await fetchWithBackoff(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType || "";
+
+                if (audioData) {
+                    const sampleRate = parseInt(mimeType.match(/rate=(\d+)/)?.[1] || "24000", 10);
+                    const pcm16 = new Int16Array(base64ToArrayBuffer(audioData));
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+
+                    currentAudio = new Audio(audioUrl);
+                    currentAudio.play();
+                    btnText.textContent = "Stop AI Voice";
+                    icon.className = "fa-solid fa-pause text-violet-400";
+
+                    currentAudio.onended = () => {
+                        currentAudio = null;
+                        btnText.textContent = "Listen to AI Voice Summary";
+                        icon.className = "fa-solid fa-volume-high text-violet-400";
+                    };
+                } else {
+                    throw new Error("No audio payload returned");
+                }
+            } catch (e) {
+                console.error(e);
+                showToast("Voice generation unavailable", "info");
+                btnText.textContent = "Listen to AI Voice Summary";
+                icon.className = "fa-solid fa-volume-high text-violet-400";
+            }
+        }
+
+        // Convert PCM 16-bit to standard WAV Blob
+        function pcmToWav(pcm16, sampleRate = 24000) {
+            const buffer = new ArrayBuffer(44 + pcm16.length * 2);
+            const view = new DataView(buffer);
+            function writeString(offset, string) {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            }
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + pcm16.length * 2, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, pcm16.length * 2, true);
+            for (let i = 0; i < pcm16.length; i++) {
+                view.setInt16(44 + i * 2, pcm16[i], true);
+            }
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        async function generateAICustomPlan() {
+            const planOutput = document.getElementById('ai-plan-output');
+            const statusEl = document.getElementById('ai-plan-status');
+            const goal = document.getElementById('ai-goal-select').value;
+            const diet = document.getElementById('ai-diet-select').value;
+
+            statusEl.textContent = "Generating strategy...";
+            planOutput.innerHTML = `
+                <div class="text-center py-10">
+                    <i class="fa-solid fa-circle-notch fa-spin text-3xl text-violet-400 mb-2"></i>
+                    <p class="text-xs text-slate-300 font-semibold">Consulting Gemini AI Coach...</p>
+                </div>
+            `;
+
+            const systemPrompt = "You are an expert nutritionist and fitness coach. Provide clear, direct, structured health action steps formatted with clean HTML tags (h4, p, ul, li).";
+            const userQuery = `Create a custom fitness and nutrition plan for a ${state.age}-year-old ${state.gender}. Height: ${state.heightCm}cm, Weight: ${state.weightKg}kg (BMI: ${state.bmi}). Goal: ${goal}, Dietary style: ${diet}. Include: 1) Recommended Daily Caloric Target, 2) Macro Split Ratio, 3) 3 Key Workout Guidelines, 4) Top 2 Meal Ideas.`;
+
+            try {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`;
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] }
+                };
+
+                const res = await fetchWithBackoff(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (responseText) {
+                    planOutput.innerHTML = `<div class="prose prose-invert max-w-none text-xs leading-relaxed space-y-2">${responseText}</div>`;
+                    statusEl.textContent = "Updated just now";
+                    AudioFX.playSuccess();
+                } else {
+                    throw new Error("Invalid text output");
+                }
+            } catch (e) {
+                console.error(e);
+                planOutput.innerHTML = `<div class="text-rose-400 p-3 bg-rose-500/10 rounded-xl border border-rose-500/20 text-xs">Failed to generate plan. Please try again.</div>`;
+                statusEl.textContent = "Error";
+            }
+        }
+
+        async function generateAIMealImage() {
+            const container = document.getElementById('ai-image-container');
+            const loading = document.getElementById('ai-image-loading');
+            const img = document.getElementById('ai-generated-img');
+
+            container.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            img.classList.add('hidden');
+
+            const diet = document.getElementById('ai-diet-select').value;
+            const prompt = `A delicious, food photography shot of a healthy ${diet} meal, colorful vegetables, high protein, beautifully arranged on a modern plate, warm lighting, top-down view`;
+
+            try {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent?key=${GEMINI_API_KEY}`;
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+                };
+
+                const res = await fetchWithBackoff(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                const base64Data = data?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+
+                if (base64Data) {
+                    img.src = `data:image/png;base64,${base64Data}`;
+                    img.classList.remove('hidden');
+                    loading.classList.add('hidden');
+                    AudioFX.playSuccess();
+                } else {
+                    throw new Error("No image data returned");
+                }
+            } catch (e) {
+                console.error(e);
+                loading.innerHTML = `<span class="text-xs text-rose-400">Could not generate visual. Try again shortly.</span>`;
+            }
+        }
+
+        async function sendAIChatMessage() {
+            const input = document.getElementById('ai-chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.value = '';
+            appendChatMessage("You", text, "user");
+
+            const systemPrompt = `You are an encouraging AI health assistant in the BMI Health Studio app. User details: Age ${state.age}, Gender ${state.gender}, Height ${state.heightCm}cm, Weight ${state.weightKg}kg, BMI ${state.bmi}. Keep answers concise, helpful, and under 3 paragraphs.`;
+
+            try {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`;
+                const payload = {
+                    contents: [{ parts: [{ text: text }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] }
+                };
+
+                const res = await fetchWithBackoff(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "I am currently adjusting my calculations. Please rephrase your query.";
+                appendChatMessage("AI Coach", reply, "ai");
+            } catch (e) {
+                appendChatMessage("AI Coach", "Sorry, I ran into a network error. Please try again.", "ai");
+            }
+        }
+
+        function sendQuickPrompt(promptText) {
+            document.getElementById('ai-chat-input').value = promptText;
+            sendAIChatMessage();
+        }
+
+        function appendChatMessage(sender, msg, type) {
+            const history = document.getElementById('ai-chat-history');
+            const div = document.createElement('div');
+            if (type === "user") {
+                div.className = "bg-slate-800 border border-slate-700 p-2.5 rounded-lg text-slate-100 text-right";
+                div.innerHTML = `<strong class="text-emerald-400 block mb-0.5">${sender}</strong> ${msg}`;
+            } else {
+                div.className = "bg-violet-900/30 border border-violet-500/30 p-2.5 rounded-lg text-slate-200";
+                div.innerHTML = `<strong class="text-violet-300 block mb-0.5">${sender}</strong> ${msg}`;
+            }
+            history.appendChild(div);
+            history.scrollTop = history.scrollHeight;
+        }
+
+        function handleMealImageUpload(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.getElementById('meal-preview-img');
+                img.src = e.target.result;
+                document.getElementById('drop-zone').classList.add('hidden');
+                document.getElementById('meal-preview-box').classList.remove('hidden');
+
+                const btn = document.getElementById('analyze-meal-btn');
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+                state.uploadedMealBase64 = e.target.result.split(',')[1];
+                state.uploadedMealMime = file.type || 'image/jpeg';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearMealPhoto() {
+            document.getElementById('drop-zone').classList.remove('hidden');
+            document.getElementById('meal-preview-box').classList.add('hidden');
+            const btn = document.getElementById('analyze-meal-btn');
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            state.uploadedMealBase64 = null;
+        }
+
+        function loadDemoMealImage() {
+            // Draw sample meal canvas to generate base64 image
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 300;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(0, 0, 400, 300);
+            ctx.fillStyle = '#22c55e';
+            ctx.beginPath(); ctx.arc(200, 150, 90, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#f59e0b';
+            ctx.beginPath(); ctx.arc(160, 130, 30, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#38bdf8';
+            ctx.beginPath(); ctx.arc(240, 160, 25, 0, Math.PI * 2); ctx.fill();
+
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            state.uploadedMealBase64 = dataUrl.split(',')[1];
+            state.uploadedMealMime = 'image/jpeg';
+
+            const img = document.getElementById('meal-preview-img');
+            img.src = dataUrl;
+            document.getElementById('drop-zone').classList.add('hidden');
+            document.getElementById('meal-preview-box').classList.remove('hidden');
+
+            const btn = document.getElementById('analyze-meal-btn');
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            showToast("Demo meal loaded! Click Analyze.", "info");
+        }
+
+        async function analyzeMealWithAI() {
+            if (!state.uploadedMealBase64) return;
+
+            const output = document.getElementById('meal-analysis-content');
+            output.innerHTML = `
+                <div class="text-center py-12">
+                    <i class="fa-solid fa-circle-notch fa-spin text-3xl text-amber-400 mb-2"></i>
+                    <p class="text-xs text-slate-300 font-semibold">Gemini Vision analyzing calories & macros...</p>
+                </div>
+            `;
+
+            const prompt = "Analyze this meal photo for nutritional value. Return a JSON schema with fields: mealName, calories (number), proteinGrams (number), carbsGrams (number), fatsGrams (number), healthScore (1-10), recommendation (short string).";
+
+            try {
+                const payload = {
+                    contents: [{
+                        role: "user",
+                        parts: [
+                            { text: prompt },
+                            {
+                                inlineData: {
+                                    mimeType: state.uploadedMealMime,
+                                    data: state.uploadedMealBase64
+                                }
+                            }
+                        ]
+                    }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                mealName: { type: "STRING" },
+                                calories: { type: "NUMBER" },
+                                proteinGrams: { type: "NUMBER" },
+                                carbsGrams: { type: "NUMBER" },
+                                fatsGrams: { type: "NUMBER" },
+                                healthScore: { type: "NUMBER" },
+                                recommendation: { type: "STRING" }
+                            },
+                            propertyOrdering: ["mealName", "calories", "proteinGrams", "carbsGrams", "fatsGrams", "healthScore", "recommendation"]
+                        }
+                    }
+                };
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`;
+                const res = await fetchWithBackoff(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await res.json();
+                const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (jsonText) {
+                    const data = JSON.parse(jsonText);
+                    output.innerHTML = `
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-700/80 pb-3">
+                                <div>
+                                    <h3 class="font-bold text-slate-100 text-sm">${data.mealName || "Analyzed Meal"}</h3>
+                                    <span class="text-xs text-amber-400 font-semibold">${data.calories || 0} kcal estimated</span>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-xs font-bold ${data.healthScore >= 7 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}">
+                                    Health Score: ${data.healthScore || 7}/10
+                                </span>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3 text-center">
+                                <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700">
+                                    <span class="text-[10px] text-slate-400 uppercase font-semibold">Protein</span>
+                                    <div class="text-sm font-bold text-emerald-400">${data.proteinGrams || 0}g</div>
+                                </div>
+                                <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700">
+                                    <span class="text-[10px] text-slate-400 uppercase font-semibold">Carbs</span>
+                                    <div class="text-sm font-bold text-sky-400">${data.carbsGrams || 0}g</div>
+                                </div>
+                                <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700">
+                                    <span class="text-[10px] text-slate-400 uppercase font-semibold">Fats</span>
+                                    <div class="text-sm font-bold text-amber-400">${data.fatsGrams || 0}g</div>
+                                </div>
+                            </div>
+
+                            <div class="p-3.5 bg-slate-800/80 rounded-xl border border-slate-700 text-xs text-slate-300">
+                                <strong class="text-amber-300 block mb-1"><i class="fa-solid fa-lightbulb"></i> AI Coach Advice for your BMI (${state.bmi}):</strong>
+                                ${data.recommendation || "Maintain balanced nutrient proportions relative to your target weight goal."}
+                            </div>
+                        </div>
+                    `;
+                    AudioFX.playSuccess();
+                } else {
+                    throw new Error("No structured output");
+                }
+            } catch (e) {
+                console.error(e);
+                output.innerHTML = `<div class="text-rose-400 text-xs p-4 bg-rose-500/10 rounded-xl border border-rose-500/20">Unable to analyze meal photo. Please ensure a clear image is provided.</div>`;
+            }
+        }
+
+        function switchTab(tab) {
+            AudioFX.playTap();
+            document.querySelectorAll('#nav-calc, #nav-aicoach, #nav-mealscan, #nav-history, #nav-guide').forEach(btn => {
+                btn.className = 'flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-400 hover:text-slate-200';
+            });
+            
+            ['calc', 'aicoach', 'mealscan', 'history', 'guide'].forEach(t => {
+                const el = document.getElementById(`tab-${t}-view`);
+                if (el) el.classList.add('hidden');
+            });
+
+            const activeBtn = document.getElementById(`nav-${tab}`);
+            if (activeBtn) {
+                activeBtn.className = 'flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all bg-emerald-600 text-white shadow-md';
+            }
+
+            document.getElementById(`tab-${tab}-view`).classList.remove('hidden');
+
+            if (tab === 'history') {
+                renderHistoryLog();
+                drawHistoryChart();
+            }
+        }
+
+        function setUnitSystem(unit) {
+            if (state.unit === unit) return;
+            state.unit = unit;
+            AudioFX.playTap();
+
+            const metricBtn = document.getElementById('unit-metric-btn');
+            const imperialBtn = document.getElementById('unit-imperial-btn');
+
+            if (unit === 'metric') {
+                metricBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-emerald-500 text-slate-950 shadow';
+                imperialBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white';
+                
+                document.getElementById('height-metric-block').classList.remove('hidden');
+                document.getElementById('height-imperial-block').classList.add('hidden');
+                document.getElementById('weight-metric-block').classList.remove('hidden');
+                document.getElementById('weight-imperial-block').classList.add('hidden');
+            } else {
+                imperialBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-emerald-500 text-slate-950 shadow';
+                metricBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white';
+                
+                document.getElementById('height-metric-block').classList.add('hidden');
+                document.getElementById('height-imperial-block').classList.remove('hidden');
+                document.getElementById('weight-metric-block').classList.add('hidden');
+                document.getElementById('weight-imperial-block').classList.remove('hidden');
+
+                const totalInches = Math.round(state.heightCm / 2.54);
+                const ft = Math.floor(totalInches / 12);
+                const inc = totalInches % 12;
+                document.getElementById('height-ft-input').value = ft;
+                document.getElementById('height-in-input').value = inc;
+
+                const lbs = Math.round(state.weightKg * 2.20462);
+                document.getElementById('weight-lbs-slider').value = lbs;
+                document.getElementById('weight-lbs-input').value = lbs;
+            }
+
+            recalculateBMI();
+        }
+
+        function setGender(gender) {
+            state.gender = gender;
+            AudioFX.playTap();
+
+            const maleBtn = document.getElementById('gender-male');
+            const femaleBtn = document.getElementById('gender-female');
+
+            if (gender === 'male') {
+                maleBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-1.5';
+                femaleBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white flex items-center gap-1.5';
+            } else {
+                femaleBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-1.5';
+                maleBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white flex items-center gap-1.5';
+            }
+
+            recalculateBMI();
+        }
+
+        function adjustValue(elementId, delta) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            let val = parseFloat(el.value) + delta;
+            val = Math.max(parseFloat(el.min), Math.min(parseFloat(el.max), val));
+            el.value = val;
+            el.dispatchEvent(new Event('input'));
+        }
+
+        function syncAgeFromSlider(val) {
+            state.age = parseInt(val) || 30;
+            document.getElementById('age-input').value = state.age;
+            recalculateBMI();
+        }
+        function syncAgeFromInput(val) {
+            state.age = parseInt(val) || 30;
+            document.getElementById('age-slider').value = Math.min(100, Math.max(10, state.age));
+            recalculateBMI();
+        }
+
+        function updateMetricHeight(val) {
+            state.heightCm = parseFloat(val) || 175;
+            document.getElementById('height-cm-slider').value = state.heightCm;
+            document.getElementById('height-cm-input').value = state.heightCm;
+            document.getElementById('height-cm-display').innerHTML = `${state.heightCm} <span class="text-xs font-normal text-slate-400">cm</span>`;
+            recalculateBMI();
+        }
+
+        function updateImperialHeight() {
+            const ft = parseInt(document.getElementById('height-ft-input').value) || 0;
+            const inc = parseInt(document.getElementById('height-in-input').value) || 0;
+            const totalInches = (ft * 12) + inc;
+            state.heightCm = Math.round(totalInches * 2.54);
+            document.getElementById('height-ft-display').textContent = `${ft} ft ${inc} in`;
+            recalculateBMI();
+        }
+
+        function updateMetricWeight(val) {
+            state.weightKg = parseFloat(val) || 70;
+            document.getElementById('weight-kg-slider').value = state.weightKg;
+            document.getElementById('weight-kg-input').value = state.weightKg;
+            document.getElementById('weight-kg-display').innerHTML = `${state.weightKg} <span class="text-xs font-normal text-slate-400">kg</span>`;
+            recalculateBMI();
+        }
+
+        function updateImperialWeight(val) {
+            const lbs = parseFloat(val) || 154;
+            state.weightKg = parseFloat((lbs / 2.20462).toFixed(1));
+            document.getElementById('weight-lbs-slider').value = lbs;
+            document.getElementById('weight-lbs-input').value = lbs;
+            document.getElementById('weight-lbs-display').innerHTML = `${lbs} <span class="text-xs font-normal text-slate-400">lbs</span>`;
+            recalculateBMI();
+        }
+
+        function resetDefaults() {
+            AudioFX.playTap();
+            state.unit = 'metric';
+            state.gender = 'male';
+            state.age = 30;
+            state.heightCm = 175;
+            state.weightKg = 70;
+
+            document.getElementById('age-slider').value = 30;
+            document.getElementById('age-input').value = 30;
+            setUnitSystem('metric');
+            setGender('male');
+            updateMetricHeight(175);
+            updateMetricWeight(70);
+            showToast("Reset inputs to default values", "info");
+        }
+
+        function recalculateBMI() {
+            if (!state.heightCm || state.heightCm <= 0 || !state.weightKg || state.weightKg <= 0) return;
+
+            const heightM = state.heightCm / 100;
+            const bmi = state.weightKg / (heightM * heightM);
+            state.bmi = parseFloat(bmi.toFixed(1));
+
+            document.getElementById('bmi-score').textContent = state.bmi.toFixed(1);
+
+            let category = 'Normal Weight';
+            let colorClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+            let iconClass = 'fa-solid fa-circle-check text-emerald-400';
+            let summaryTitle = 'Optimal Weight Range';
+            let summaryDesc = 'Your BMI is within the ideal standard range. Continue engaging in regular cardiovascular and strength activities while eating nutrient-dense whole foods.';
+
+            let pointerPercent = 50;
+
+            if (state.bmi < 18.5) {
+                category = 'Underweight';
+                colorClass = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+                iconClass = 'fa-solid fa-circle-exclamation text-blue-400';
+                summaryTitle = 'Below Average BMI';
+                summaryDesc = 'Your BMI is lower than recommended. Ensure your diet contains adequate caloric density, proteins, and essential micronutrients.';
+                pointerPercent = Math.max(2, (state.bmi / 18.5) * 25);
+            } else if (state.bmi >= 18.5 && state.bmi <= 24.9) {
+                category = 'Normal Weight';
+                colorClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+                iconClass = 'fa-solid fa-circle-check text-emerald-400';
+                summaryTitle = 'Optimal Weight Range';
+                summaryDesc = 'Your BMI is within the ideal standard range. Continue engaging in regular cardiovascular and strength activities while eating whole foods.';
+                pointerPercent = 25 + ((state.bmi - 18.5) / (24.9 - 18.5)) * 25;
+            } else if (state.bmi >= 25.0 && state.bmi <= 29.9) {
+                category = 'Overweight';
+                colorClass = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+                iconClass = 'fa-solid fa-triangle-exclamation text-amber-400';
+                summaryTitle = 'Above Average BMI';
+                summaryDesc = 'Your BMI suggests excess body mass relative to height. Daily physical exercise and balanced nutrition will help optimize wellness.';
+                pointerPercent = 50 + ((state.bmi - 25.0) / (29.9 - 25.0)) * 25;
+            } else {
+                category = 'Obese Range';
+                colorClass = 'bg-rose-500/20 text-rose-400 border-rose-500/30';
+                iconClass = 'fa-solid fa-triangle-exclamation text-rose-400';
+                summaryTitle = 'High Health Risk Category';
+                summaryDesc = 'Your BMI falls into the obesity classification. Structured medical and dietary guidance is recommended.';
+                pointerPercent = Math.min(98, 75 + ((state.bmi - 30.0) / 15.0) * 25);
+            }
+
+            document.getElementById('meter-pointer').style.left = `${pointerPercent}%`;
+
+            const badge = document.getElementById('bmi-status-badge');
+            badge.textContent = category;
+            badge.className = `px-3 py-1 rounded-full text-xs font-bold border ${colorClass}`;
+
+            document.getElementById('summary-title').textContent = summaryTitle;
+            document.getElementById('summary-desc').textContent = summaryDesc;
+            document.getElementById('summary-icon').className = iconClass;
+
+            const minKg = (18.5 * heightM * heightM).toFixed(1);
+            const maxKg = (24.9 * heightM * heightM).toFixed(1);
+
+            if (state.unit === 'metric') {
+                document.getElementById('ideal-weight-val').textContent = `${minKg} – ${maxKg}`;
+                document.getElementById('ideal-weight-unit').textContent = 'kg (healthy target)';
+            } else {
+                const minLbs = Math.round(minKg * 2.20462);
+                const maxLbs = Math.round(maxKg * 2.20462);
+                document.getElementById('ideal-weight-val').textContent = `${minLbs} – ${maxLbs}`;
+                document.getElementById('ideal-weight-unit').textContent = 'lbs (healthy target)';
+            }
+
+            let bmr = (10 * state.weightKg) + (6.25 * state.heightCm) - (5 * state.age);
+            bmr += (state.gender === 'male') ? 5 : -161;
+            document.getElementById('bmr-val').textContent = Math.round(bmr).toLocaleString();
+
+            const prime = (state.bmi / 25).toFixed(2);
+            document.getElementById('prime-val').textContent = prime;
+        }
+
+        function saveCurrentRecord() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+            let weightFormatted = `${state.weightKg} kg`;
+            let heightFormatted = `${state.heightCm} cm`;
+
+            if (state.unit === 'imperial') {
+                const lbs = Math.round(state.weightKg * 2.20462);
+                const totalInches = Math.round(state.heightCm / 2.54);
+                const ft = Math.floor(totalInches / 12);
+                const inc = totalInches % 12;
+                weightFormatted = `${lbs} lbs`;
+                heightFormatted = `${ft}'${inc}"`;
+            }
+
+            const record = {
+                id: Date.now(),
+                date: dateStr,
+                bmi: state.bmi,
+                weight: weightFormatted,
+                height: heightFormatted,
+                unit: state.unit,
+                category: document.getElementById('bmi-status-badge').textContent
+            };
+
+            state.history.unshift(record);
+            if (state.history.length > 20) state.history.pop();
+
+            localStorage.setItem('bmi_app_history', JSON.stringify(state.history));
+            AudioFX.playSuccess();
+            showToast("Saved result to history log!", "success");
+        }
+
+        function renderHistoryLog() {
+            const listEl = document.getElementById('history-list');
+            listEl.innerHTML = '';
+
+            if (!state.history || state.history.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-8 text-slate-500 text-xs">
+                        <i class="fa-solid fa-folder-open text-2xl mb-2 block"></i>
+                        No saved records yet. Calculate your BMI and click "Save Log".
+                    </div>
+                `;
+                return;
+            }
+
+            state.history.forEach(item => {
+                let badgeColor = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+                if (item.bmi < 18.5) badgeColor = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+                else if (item.bmi >= 25 && item.bmi <= 29.9) badgeColor = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+                else if (item.bmi >= 30) badgeColor = 'bg-rose-500/20 text-rose-400 border-rose-500/30';
+
+                const card = document.createElement('div');
+                card.className = 'flex items-center justify-between p-3.5 rounded-xl bg-slate-900 border border-slate-700/60 hover:border-slate-600 transition-all';
+                card.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-lg bg-slate-800 flex flex-col items-center justify-center font-bold text-white text-sm">
+                            ${item.bmi.toFixed(1)}
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-semibold text-slate-200">${item.weight}</span>
+                                <span class="text-[10px] text-slate-400">(${item.height})</span>
+                            </div>
+                            <span class="text-[10px] text-slate-500">${item.date}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-3">
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badgeColor}">
+                            ${item.category}
+                        </span>
+                        <button onclick="deleteHistoryItem(${item.id})" class="text-slate-500 hover:text-rose-400 transition-colors p-1 text-xs" title="Delete record">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+        }
+
+        function deleteHistoryItem(id) {
+            state.history = state.history.filter(item => item.id !== id);
+            localStorage.setItem('bmi_app_history', JSON.stringify(state.history));
+            AudioFX.playTap();
+            renderHistoryLog();
+            drawHistoryChart();
+            showToast("Item deleted", "info");
+        }
+
+        function clearHistoryLog() {
+            if (state.history.length === 0) return;
+            state.history = [];
+            localStorage.removeItem('bmi_app_history');
+            AudioFX.playTap();
+            renderHistoryLog();
+            drawHistoryChart();
+            showToast("Cleared all history entries", "info");
+        }
+
+        function drawHistoryChart() {
+            const canvas = document.getElementById('historyChart');
+            const noChartMsg = document.getElementById('no-chart-msg');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+
+            ctx.clearRect(0, 0, rect.width, rect.height);
+
+            if (!state.history || state.history.length < 2) {
+                noChartMsg.classList.remove('hidden');
+                return;
+            }
+
+            noChartMsg.classList.add('hidden');
+
+            const data = [...state.history].reverse();
+            const padding = 35;
+            const w = rect.width - (padding * 2);
+            const h = rect.height - (padding * 2);
+
+            const bmiValues = data.map(d => d.bmi);
+            let minBmi = Math.min(...bmiValues, 15);
+            let maxBmi = Math.max(...bmiValues, 35);
+            if (maxBmi === minBmi) {
+                maxBmi += 5;
+                minBmi -= 5;
+            }
+
+            const stepX = w / (data.length - 1);
+
+            const yNormalUpper = padding + h - ((24.9 - minBmi) / (maxBmi - minBmi)) * h;
+            const yNormalLower = padding + h - ((18.5 - minBmi) / (maxBmi - minBmi)) * h;
+
+            ctx.fillStyle = 'rgba(34, 197, 94, 0.08)';
+            ctx.fillRect(padding, yNormalUpper, w, Math.max(2, yNormalLower - yNormalUpper));
+
+            ctx.strokeStyle = 'rgba(51, 65, 85, 0.4)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+
+            [18.5, 25.0, 30.0].forEach(val => {
+                if (val >= minBmi && val <= maxBmi) {
+                    const y = padding + h - ((val - minBmi) / (maxBmi - minBmi)) * h;
+                    ctx.beginPath();
+                    ctx.moveTo(padding, y);
+                    ctx.lineTo(padding + w, y);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#64748b';
+                    ctx.font = '10px Inter';
+                    ctx.fillText(val, 10, y + 3);
+                }
+            });
+
+            ctx.setLineDash([]);
+
+            ctx.beginPath();
+            ctx.strokeStyle = '#22c55e';
+            ctx.lineWidth = 3;
+
+            const points = data.map((item, idx) => {
+                const x = padding + (idx * stepX);
+                const y = padding + h - ((item.bmi - minBmi) / (maxBmi - minBmi)) * h;
+                return { x, y, bmi: item.bmi, date: item.date };
+            });
+
+            points.forEach((pt, i) => {
+                if (i === 0) ctx.moveTo(pt.x, pt.y);
+                else ctx.lineTo(pt.x, pt.y);
+            });
+            ctx.stroke();
+
+            const gradient = ctx.createLinearGradient(0, padding, 0, padding + h);
+            gradient.addColorStop(0, 'rgba(34, 197, 94, 0.3)');
+            gradient.addColorStop(1, 'rgba(34, 197, 94, 0.0)');
+
+            ctx.beginPath();
+            points.forEach((pt, i) => {
+                if (i === 0) ctx.moveTo(pt.x, pt.y);
+                else ctx.lineTo(pt.x, pt.y);
+            });
+            ctx.lineTo(points[points.length - 1].x, padding + h);
+            ctx.lineTo(points[0].x, padding + h);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            points.forEach(pt => {
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = '#0f172a';
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#22c55e';
+                ctx.stroke();
+
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = 'bold 10px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText(pt.bmi.toFixed(1), pt.x, pt.y - 10);
+            });
+        }
+
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.textContent = message;
+
+            if (type === "success") {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400 text-lg";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-info text-sky-400 text-lg";
+            }
+
+            toast.classList.remove('translate-y-[-150%]', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-[-150%]', 'opacity-0');
+            }, 3000);
+        }
+
+        window.addEventListener('load', () => {
+            try {
+                const saved = localStorage.getItem('bmi_app_history');
+                if (saved) state.history = JSON.parse(saved);
+            } catch(e) {
+                state.history = [];
+            }
+
+            recalculateBMI();
+
+            window.addEventListener('resize', () => {
+                if (!document.getElementById('tab-history-view').classList.contains('hidden')) {
+                    drawHistoryChart();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
