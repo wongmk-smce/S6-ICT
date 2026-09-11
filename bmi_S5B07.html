@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitGauge Pro - Interactive BMI & Health Analytics</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        },
+                        underweight: '#3b82f6',
+                        normal: '#10b981',
+                        overweight: '#f59e0b',
+                        obese: '#ef4444'
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for History Trend -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Custom styled range sliders for smooth UX */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 10px;
+            cursor: pointer;
+            border-radius: 9999px;
+            background: linear-gradient(90deg, #e2e8f0, #cbd5e1);
+        }
+        .dark input[type=range]::-webkit-slider-runnable-track {
+            background: linear-gradient(90deg, #334155, #475569);
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #10b981;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -7px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            transition: transform 0.15s ease, background-color 0.2s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+        input[type=range]::-webkit-slider-thumb:active {
+            transform: scale(0.95);
+        }
+
+        /* SVG Gauge needle rotation transition */
+        .gauge-needle {
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: 100px 100px;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans transition-colors duration-300 min-h-screen flex flex-col">
+
+    <!-- Top Header Navigation -->
+    <header class="sticky top-0 z-40 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                    <i class="fa-solid font-bold fa-heart-pulse text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg sm:text-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
+                        FitGauge <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-200 dark:border-emerald-800">Pro</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Precision Body Mass Index & Health Suite</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <!-- Imperial / Metric Unit Toggle Switch -->
+                <div class="bg-slate-200/80 dark:bg-slate-800 p-1 rounded-xl flex items-center text-xs font-semibold">
+                    <button id="unitMetricBtn" onclick="setUnitSystem('metric')" class="px-3 py-1.5 rounded-lg transition-all duration-200 bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm">
+                        Metric (cm, kg)
+                    </button>
+                    <button id="unitImperialBtn" onclick="setUnitSystem('imperial')" class="px-3 py-1.5 rounded-lg transition-all duration-200 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
+                        Imperial (ft, lbs)
+                    </button>
+                </div>
+
+                <!-- Theme Toggle Button -->
+                <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition-colors border border-slate-200 dark:border-slate-700" title="Toggle Theme">
+                    <i id="themeIcon" class="fa-solid fa-moon text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Application Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- Top Overview Banner -->
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 text-white p-6 sm:p-8 shadow-xl shadow-emerald-900/10">
+            <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div class="max-w-xl">
+                    <span class="inline-block px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-semibold mb-2 text-white">
+                        <i class="fa-solid fa-circle-check mr-1 text-emerald-200"></i> WHO Standard Compliant
+                    </span>
+                    <h2 class="text-2xl sm:text-3xl font-bold tracking-tight">Discover Your Body Mass Index in Seconds</h2>
+                    <p class="text-emerald-100 text-sm sm:text-base mt-2">Adjust the interactive sliders below to view real-time feedback, health recommendations, and ideal target weights.</p>
+                </div>
+                <div class="flex items-center gap-4 bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 self-start md:self-auto">
+                    <div class="text-center px-3 border-r border-white/20">
+                        <div id="quickBmiVal" class="text-3xl font-extrabold text-white">22.5</div>
+                        <div class="text-[10px] uppercase tracking-wider text-emerald-200 font-semibold">Current BMI</div>
+                    </div>
+                    <div class="px-2">
+                        <div id="quickBmiBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-400 text-slate-900 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-slate-900"></span> Normal
+                        </div>
+                        <div id="quickBmiDesc" class="text-xs text-emerald-100 mt-1">Healthy body mass index</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Grid: Input Controls & Live Results Gauge -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <!-- LEFT COLUMN: Input Sliders & Personalization (7 Cols) -->
+            <div class="lg:col-span-7 space-y-6">
+                
+                <!-- Personal Profile & Slider Card -->
+                <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm relative">
+                    <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-100 dark:border-slate-800">
+                        <h3 class="font-bold text-lg flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-emerald-500"></i> Body Measurements
+                        </h3>
+                        <button onclick="resetInputs()" class="text-xs text-slate-400 hover:text-emerald-500 transition-colors flex items-center gap-1">
+                            <i class="fa-solid fa-rotate-right"></i> Reset Defaults
+                        </button>
+                    </div>
+
+                    <!-- Personal Attributes (Gender & Age) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                        <!-- Gender Selection -->
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Biological Sex</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" onclick="setGender('male')" id="genderMaleBtn" class="py-2.5 px-4 rounded-xl text-sm font-semibold border flex items-center justify-center gap-2 transition-all border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+                                    <i class="fa-solid fa-mars"></i> Male
+                                </button>
+                                <button type="button" onclick="setGender('female')" id="genderFemaleBtn" class="py-2.5 px-4 rounded-xl text-sm font-semibold border flex items-center justify-center gap-2 transition-all border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300">
+                                    <i class="fa-solid fa-venus"></i> Female
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Age Input -->
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label for="ageInput" class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Age (Years)</label>
+                                <span id="ageValDisplay" class="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded">30 yrs</span>
+                            </div>
+                            <div class="relative flex items-center">
+                                <input type="number" id="ageInput" min="10" max="120" value="30" oninput="syncAge(this.value)" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Height Input Section -->
+                    <div class="mb-8 bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                        <div class="flex justify-between items-center mb-3">
+                            <label class="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <i class="fa-solid fa-ruler-vertical text-emerald-500"></i> Height
+                            </label>
+                            
+                            <!-- Metric Display vs Imperial Display -->
+                            <div id="heightValueContainer" class="flex items-baseline gap-1">
+                                <!-- Dynamic Metric Text Input -->
+                                <div id="heightMetricWrapper" class="flex items-center gap-1">
+                                    <input type="number" id="heightMetricInput" min="80" max="250" value="175" oninput="onHeightMetricInput(this.value)" class="w-20 text-right font-extrabold text-2xl text-emerald-600 dark:text-emerald-400 bg-transparent border-b-2 border-emerald-500/30 focus:border-emerald-500 focus:outline-none p-0">
+                                    <span class="text-sm font-bold text-slate-500 dark:text-slate-400">cm</span>
+                                </div>
+                                <!-- Imperial Inputs (Feet & Inches) -->
+                                <div id="heightImperialWrapper" class="hidden flex items-center gap-2">
+                                    <div class="flex items-center gap-1">
+                                        <input type="number" id="heightFtInput" min="2" max="8" value="5" oninput="onHeightImperialInput()" class="w-12 text-center font-extrabold text-2xl text-emerald-600 dark:text-emerald-400 bg-transparent border-b-2 border-emerald-500/30 focus:border-emerald-500 focus:outline-none p-0">
+                                        <span class="text-xs font-bold text-slate-500">ft</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <input type="number" id="heightInInput" min="0" max="11" value="9" oninput="onHeightImperialInput()" class="w-12 text-center font-extrabold text-2xl text-emerald-600 dark:text-emerald-400 bg-transparent border-b-2 border-emerald-500/30 focus:border-emerald-500 focus:outline-none p-0">
+                                        <span class="text-xs font-bold text-slate-500">in</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slider Bar for Height -->
+                        <div class="space-y-2 mt-2">
+                            <input type="range" id="heightSlider" min="80" max="230" step="1" value="175" oninput="onHeightSliderChange(this.value)" class="w-full accent-emerald-500">
+                            <div class="flex justify-between text-[11px] font-semibold text-slate-400">
+                                <span id="heightMinLabel">80 cm</span>
+                                <span id="heightMidLabel">155 cm</span>
+                                <span id="heightMaxLabel">230 cm</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Weight Input Section -->
+                    <div class="mb-4 bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                        <div class="flex justify-between items-center mb-3">
+                            <label class="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <i class="fa-solid fa-weight-scale text-emerald-500"></i> Weight
+                            </label>
+                            
+                            <div class="flex items-center gap-1">
+                                <input type="number" id="weightInput" min="20" max="250" step="0.5" value="70" oninput="onWeightInput(this.value)" class="w-24 text-right font-extrabold text-2xl text-emerald-600 dark:text-emerald-400 bg-transparent border-b-2 border-emerald-500/30 focus:border-emerald-500 focus:outline-none p-0">
+                                <span id="weightUnitLabel" class="text-sm font-bold text-slate-500 dark:text-slate-400">kg</span>
+                            </div>
+                        </div>
+
+                        <!-- Slider Bar for Weight -->
+                        <div class="space-y-2 mt-2">
+                            <input type="range" id="weightSlider" min="20" max="200" step="0.5" value="70" oninput="onWeightSliderChange(this.value)" class="w-full accent-emerald-500">
+                            <div class="flex justify-between text-[11px] font-semibold text-slate-400">
+                                <span id="weightMinLabel">20 kg</span>
+                                <span id="weightMidLabel">110 kg</span>
+                                <span id="weightMaxLabel">200 kg</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Target Healthy Weight Card -->
+                <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center text-xl shrink-0">
+                            <i class="fa-solid fa-bullseye"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs uppercase font-bold text-slate-400 tracking-wider">Ideal Weight Range</div>
+                            <div id="healthyWeightText" class="text-lg font-extrabold text-slate-800 dark:text-slate-100">
+                                56.7 - 76.3 kg
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Based on normal BMI range (18.5 - 24.9) for your height</p>
+                        </div>
+                    </div>
+                    <button onclick="saveCurrentBMI()" class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 shrink-0">
+                        <i class="fa-solid fa-bookmark"></i> Save Entry
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: Visual Gauge & Score Breakdown (5 Cols) -->
+            <div class="lg:col-span-5 space-y-6">
+
+                <!-- Gauge Visual Card -->
+                <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center text-center relative overflow-hidden">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Live BMI Gauge</span>
+                    
+                    <!-- SVG Semi-Circle Animated Meter -->
+                    <div class="relative w-64 h-36 my-2">
+                        <svg class="w-full h-full overflow-visible" viewBox="0 0 200 110">
+                            <!-- Background Arc Segments -->
+                            <!-- Underweight Segment (Blue: 12 - 18.5) -->
+                            <path d="M 20 100 A 80 80 0 0 1 52.8 38.3" fill="none" stroke="#3b82f6" stroke-width="16" stroke-linecap="round"/>
+                            <!-- Normal Segment (Green: 18.5 - 25) -->
+                            <path d="M 57 34.3 A 80 80 0 0 1 114.2 24" fill="none" stroke="#10b981" stroke-width="16"/>
+                            <!-- Overweight Segment (Orange: 25 - 30) -->
+                            <path d="M 119 25 A 80 80 0 0 1 154 44" fill="none" stroke="#f59e0b" stroke-width="16"/>
+                            <!-- Obese Segment (Red: 30 - 40) -->
+                            <path d="M 158 48 A 80 80 0 0 1 180 100" fill="none" stroke="#ef4444" stroke-width="16" stroke-linecap="round"/>
+                            
+                            <!-- Gauge Needle -->
+                            <g id="gaugeNeedleGroup" class="gauge-needle" style="transform: rotate(0deg);">
+                                <circle cx="100" cy="100" r="8" fill="#1e293b" class="dark:fill-slate-100"/>
+                                <polygon points="96,100 104,100 100,22" fill="#1e293b" class="dark:fill-slate-100"/>
+                            </g>
+                        </svg>
+
+                        <!-- Scale Min/Max Labels -->
+                        <div class="absolute bottom-0 left-2 text-[10px] font-extrabold text-slate-400">12</div>
+                        <div class="absolute top-2 left-12 text-[10px] font-extrabold text-slate-400">18.5</div>
+                        <div class="absolute top-0 left-1/2 -translate-x-1/2 text-[10px] font-extrabold text-slate-400">25</div>
+                        <div class="absolute top-4 right-12 text-[10px] font-extrabold text-slate-400">30</div>
+                        <div class="absolute bottom-0 right-2 text-[10px] font-extrabold text-slate-400">40</div>
+                    </div>
+
+                    <!-- Numerical Display -->
+                    <div class="mt-2">
+                        <div id="bmiNumberDisplay" class="text-5xl font-black tracking-tight text-slate-900 dark:text-white">
+                            22.9
+                        </div>
+                        <div id="bmiCategoryBadge" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-extrabold mt-3 bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300/50">
+                            <i class="fa-solid fa-circle text-[8px]"></i> Normal Weight
+                        </div>
+                    </div>
+
+                    <!-- Segment Spectrum Bar -->
+                    <div class="w-full mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+                        <div class="flex justify-between text-xs font-semibold text-slate-500 mb-1.5">
+                            <span>Spectrum Position</span>
+                            <span id="spectrumPercentText" class="font-bold text-slate-800 dark:text-slate-200">38%</span>
+                        </div>
+                        <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5 flex relative">
+                            <div class="h-full w-[23%] bg-blue-500 rounded-l-full"></div>
+                            <div class="h-full w-[23%] bg-emerald-500"></div>
+                            <div class="h-full w-[18%] bg-amber-500"></div>
+                            <div class="h-full w-[36%] bg-rose-500 rounded-r-full"></div>
+                            <!-- Marker cursor -->
+                            <div id="spectrumMarker" class="absolute top-0 bottom-0 w-2.5 bg-slate-900 dark:bg-white rounded-full shadow-md border border-white dark:border-slate-900 transition-all duration-500" style="left: 38%;"></div>
+                        </div>
+                        <div class="grid grid-cols-4 text-[10px] text-center font-bold text-slate-400 mt-2">
+                            <span>&lt;18.5</span>
+                            <span>18.5-24.9</span>
+                            <span>25-29.9</span>
+                            <span>30+</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Dynamic Personal Insights Card -->
+                <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                    <h4 class="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-lightbulb text-amber-500"></i> Personal Health Insights
+                    </h4>
+                    
+                    <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300">
+                        <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 flex items-start gap-3">
+                            <div class="p-2 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 shrink-0">
+                                <i class="fa-solid fa-glass-water"></i>
+                            </div>
+                            <div>
+                                <span class="font-bold text-slate-800 dark:text-slate-200 block">Daily Hydration Target</span>
+                                <span id="waterTipText">Aim for approx. 2.5 Liters of water daily based on your body mass.</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 flex items-start gap-3">
+                            <div class="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 shrink-0">
+                                <i class="fa-solid fa-person-running"></i>
+                            </div>
+                            <div>
+                                <span class="font-bold text-slate-800 dark:text-slate-200 block">Physical Activity Guidance</span>
+                                <span id="activityTipText">Maintain 150 minutes of moderate aerobic activity weekly to sustain current balance.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- WHO Reference Table & Info Cards -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div>
+                    <h3 class="font-bold text-lg text-slate-900 dark:text-slate-100">World Health Organization (WHO) BMI Ranges</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Standard body mass index classification reference for adults</p>
+                </div>
+                <span class="text-xs bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl font-semibold text-slate-600 dark:text-slate-300 self-start sm:self-auto">
+                    Adults 18+ Years
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Underweight Card -->
+                <div id="whoCardUnderweight" class="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 transition-all">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold uppercase text-blue-500">Underweight</span>
+                        <i class="fa-solid fa-shield-halved text-blue-500"></i>
+                    </div>
+                    <div class="text-xl font-extrabold text-slate-900 dark:text-slate-100">&lt; 18.5</div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">May indicate nutritional deficiency or underlying health conditions.</p>
+                </div>
+
+                <!-- Normal Card -->
+                <div id="whoCardNormal" class="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 transition-all">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold uppercase text-emerald-500">Normal Weight</span>
+                        <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                    </div>
+                    <div class="text-xl font-extrabold text-slate-900 dark:text-slate-100">18.5 – 24.9</div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Optimal body ratio associated with lowest health risk factors.</p>
+                </div>
+
+                <!-- Overweight Card -->
+                <div id="whoCardOverweight" class="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 transition-all">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold uppercase text-amber-500">Overweight</span>
+                        <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                    </div>
+                    <div class="text-xl font-extrabold text-slate-900 dark:text-slate-100">25.0 – 29.9</div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Increased likelihood of cardiovascular and metabolic strain.</p>
+                </div>
+
+                <!-- Obese Card -->
+                <div id="whoCardObese" class="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 transition-all">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold uppercase text-rose-500">Obesity</span>
+                        <i class="fa-solid fa-circle-exclamation text-rose-500"></i>
+                    </div>
+                    <div class="text-xl font-extrabold text-slate-900 dark:text-slate-100">30.0+</div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">High risk of heart disease, type 2 diabetes, and hypertension.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Tracker & Interactive Chart -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h3 class="font-bold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-emerald-500"></i> Saved Measurement History
+                    </h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Track your BMI trends over time stored locally in your browser</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="confirmClearHistory()" class="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 hover:bg-rose-100 transition-colors">
+                        <i class="fa-solid fa-trash-can mr-1"></i> Clear Log
+                    </button>
+                </div>
+            </div>
+
+            <!-- History Chart & Data Grid Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <!-- Trend Chart (7 cols) -->
+                <div class="lg:col-span-7 bg-slate-50 dark:bg-slate-800/40 p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800 h-64 flex flex-col justify-center">
+                    <canvas id="historyChart"></canvas>
+                </div>
+
+                <!-- History Records Table (5 cols) -->
+                <div class="lg:col-span-5 border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden">
+                    <div class="max-h-60 overflow-y-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-100 dark:bg-slate-800 font-bold text-slate-500 dark:text-slate-400 sticky top-0">
+                                <tr>
+                                    <th class="p-3">Date</th>
+                                    <th class="p-3">Weight</th>
+                                    <th class="p-3">BMI</th>
+                                    <th class="p-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
+                                <!-- Populated dynamically by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Custom Modal for Confirmation (Replaces Alert/Confirm) -->
+    <div id="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden transition-opacity">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl text-center space-y-4">
+            <div class="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-500 mx-auto flex items-center justify-center text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h4 class="text-base font-bold text-slate-900 dark:text-slate-100">Clear History Log?</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">This action cannot be undone. All stored BMI measurements will be deleted.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="closeModal()" class="py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition-colors">Cancel</button>
+                <button onclick="executeClearHistory()" class="py-2.5 rounded-xl text-xs font-bold text-white bg-rose-500 hover:bg-rose-600 transition-colors">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Box -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
+            <p>© <span id="yearSpan">2026</span> FitGauge Pro. Disclaimer: BMI is a general indicator and does not account for muscle mass, bone density, or body composition.</p>
+        </div>
+    </footer>
+
+    <script>
+        /* Global Application State */
+        let state = {
+            unit: 'metric', // 'metric' | 'imperial'
+            gender: 'male', // 'male' | 'female'
+            age: 30,
+            heightCm: 175,  // stored in standard cm
+            weightKg: 70,   // stored in standard kg
+            history: []
+        };
+
+        let historyChart = null;
+
+        /* Initialization on Page Load */
+        window.onload = function() {
+            document.getElementById('yearSpan').textContent = new Date().getFullYear();
+            loadHistoryFromStorage();
+            initChart();
+            updateUI();
+        };
+
+        /* Dark Mode Toggle */
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const isDark = html.classList.toggle('dark');
+            const icon = document.getElementById('themeIcon');
+            icon.className = isDark ? 'fa-solid fa-sun text-lg' : 'fa-solid fa-moon text-lg';
+            if (historyChart) {
+                historyChart.options.scales.x.grid.color = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+                historyChart.options.scales.y.grid.color = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+                historyChart.update();
+            }
+        }
+
+        /* Unit Switching (Metric vs Imperial) */
+        function setUnitSystem(unit) {
+            if (state.unit === unit) return;
+            state.unit = unit;
+
+            const mBtn = document.getElementById('unitMetricBtn');
+            const iBtn = document.getElementById('unitImperialBtn');
+            
+            const activeClass = "bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm";
+            const inactiveClass = "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200";
+
+            if (unit === 'metric') {
+                mBtn.className = `px-3 py-1.5 rounded-lg transition-all duration-200 ${activeClass}`;
+                iBtn.className = `px-3 py-1.5 rounded-lg transition-all duration-200 ${inactiveClass}`;
+                document.getElementById('heightMetricWrapper').classList.remove('hidden');
+                document.getElementById('heightImperialWrapper').classList.add('hidden');
+                document.getElementById('weightUnitLabel').textContent = 'kg';
+            } else {
+                iBtn.className = `px-3 py-1.5 rounded-lg transition-all duration-200 ${activeClass}`;
+                mBtn.className = `px-3 py-1.5 rounded-lg transition-all duration-200 ${inactiveClass}`;
+                document.getElementById('heightMetricWrapper').classList.add('hidden');
+                document.getElementById('heightImperialWrapper').classList.remove('hidden');
+                document.getElementById('weightUnitLabel').textContent = 'lbs';
+            }
+
+            configureSliderRanges();
+            updateUI();
+        }
+
+        /* Configure Slider Min/Max & Labels depending on Unit */
+        function configureSliderRanges() {
+            const hSlider = document.getElementById('heightSlider');
+            const wSlider = document.getElementById('weightSlider');
+
+            if (state.unit === 'metric') {
+                // Height Slider: 80 cm to 230 cm
+                hSlider.min = 80;
+                hSlider.max = 230;
+                hSlider.step = 1;
+                hSlider.value = Math.round(state.heightCm);
+
+                document.getElementById('heightMinLabel').textContent = "80 cm";
+                document.getElementById('heightMidLabel').textContent = "155 cm";
+                document.getElementById('heightMaxLabel').textContent = "230 cm";
+
+                // Weight Slider: 20 kg to 200 kg
+                wSlider.min = 20;
+                wSlider.max = 200;
+                wSlider.step = 0.5;
+                wSlider.value = state.weightKg.toFixed(1);
+
+                document.getElementById('weightMinLabel').textContent = "20 kg";
+                document.getElementById('weightMidLabel').textContent = "110 kg";
+                document.getElementById('weightMaxLabel').textContent = "200 kg";
+            } else {
+                // Imperial Total Inches: 32 in (2'8") to 90 in (7'6")
+                hSlider.min = 32;
+                hSlider.max = 90;
+                hSlider.step = 1;
+                const totalInches = Math.round(state.heightCm / 2.54);
+                hSlider.value = totalInches;
+
+                document.getElementById('heightMinLabel').textContent = "2'8\"";
+                document.getElementById('heightMidLabel').textContent = "5'1\"";
+                document.getElementById('heightMaxLabel').textContent = "7'6\"";
+
+                // Imperial Weight Slider: 45 lbs to 450 lbs
+                wSlider.min = 45;
+                wSlider.max = 450;
+                wSlider.step = 1;
+                const weightLbs = Math.round(state.weightKg * 2.20462);
+                wSlider.value = weightLbs;
+
+                document.getElementById('weightMinLabel').textContent = "45 lbs";
+                document.getElementById('weightMidLabel').textContent = "250 lbs";
+                document.getElementById('weightMaxLabel').textContent = "450 lbs";
+            }
+        }
+
+        /* Gender Selection */
+        function setGender(gender) {
+            state.gender = gender;
+            const mBtn = document.getElementById('genderMaleBtn');
+            const fBtn = document.getElementById('genderFemaleBtn');
+
+            const activeStyle = "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400";
+            const inactiveStyle = "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300";
+
+            if (gender === 'male') {
+                mBtn.className = `py-2.5 px-4 rounded-xl text-sm font-semibold border flex items-center justify-center gap-2 transition-all ${activeStyle}`;
+                fBtn.className = `py-2.5 px-4 rounded-xl text-sm font-semibold border flex items-center justify-center gap-2 transition-all ${inactiveStyle}`;
+            } else {
+                fBtn.className = `py-2.5 px-4 rounded-xl text-sm font-semibold border flex items-center justify-center gap-2 transition-all ${activeStyle}`;
+                mBtn.className = `py-2.5 px-4 rounded-xl text-sm font-semibold border flex items-center justify-center gap-2 transition-all ${inactiveStyle}`;
+            }
+            updateUI();
+        }
+
+        function syncAge(val) {
+            const age = parseInt(val) || 30;
+            state.age = Math.max(10, Math.min(120, age));
+            document.getElementById('ageValDisplay').textContent = `${state.age} yrs`;
+            updateUI();
+        }
+
+        /* Height Slider Change Listener */
+        function onHeightSliderChange(val) {
+            const num = parseFloat(val);
+            if (state.unit === 'metric') {
+                state.heightCm = num;
+            } else {
+                state.heightCm = num * 2.54;
+            }
+            updateHeightInputsFromState();
+            updateUI();
+        }
+
+        /* Metric Height Number Input Listener */
+        function onHeightMetricInput(val) {
+            const cm = parseFloat(val) || 100;
+            state.heightCm = Math.max(50, Math.min(250, cm));
+            document.getElementById('heightSlider').value = state.heightCm;
+            updateUI();
+        }
+
+        /* Imperial Height (Ft & In) Listener */
+        function onHeightImperialInput() {
+            const ft = parseInt(document.getElementById('heightFtInput').value) || 0;
+            const inches = parseInt(document.getElementById('heightInInput').value) || 0;
+            const totalInches = (ft * 12) + inches;
+            state.heightCm = totalInches * 2.54;
+            document.getElementById('heightSlider').value = totalInches;
+            updateUI();
+        }
+
+        /* Weight Slider Change Listener */
+        function onWeightSliderChange(val) {
+            const num = parseFloat(val);
+            if (state.unit === 'metric') {
+                state.weightKg = num;
+            } else {
+                state.weightKg = num / 2.20462;
+            }
+            updateWeightInputsFromState();
+            updateUI();
+        }
+
+        /* Weight Number Input Listener */
+        function onWeightInput(val) {
+            const w = parseFloat(val) || 20;
+            if (state.unit === 'metric') {
+                state.weightKg = Math.max(10, Math.min(300, w));
+                document.getElementById('weightSlider').value = state.weightKg;
+            } else {
+                state.weightKg = Math.max(10, Math.min(300, w / 2.20462));
+                document.getElementById('weightSlider').value = w;
+            }
+            updateUI();
+        }
+
+        /* Update Text Box Inputs to Reflect State */
+        function updateHeightInputsFromState() {
+            if (state.unit === 'metric') {
+                document.getElementById('heightMetricInput').value = Math.round(state.heightCm);
+            } else {
+                const totalInches = Math.round(state.heightCm / 2.54);
+                const ft = Math.floor(totalInches / 12);
+                const inches = totalInches % 12;
+                document.getElementById('heightFtInput').value = ft;
+                document.getElementById('heightInInput').value = inches;
+            }
+        }
+
+        function updateWeightInputsFromState() {
+            if (state.unit === 'metric') {
+                document.getElementById('weightInput').value = state.weightKg.toFixed(1);
+            } else {
+                const lbs = Math.round(state.weightKg * 2.20462);
+                document.getElementById('weightInput').value = lbs;
+            }
+        }
+
+        function resetInputs() {
+            state.heightCm = 175;
+            state.weightKg = 70;
+            state.age = 30;
+            document.getElementById('ageInput').value = 30;
+            document.getElementById('ageValDisplay').textContent = "30 yrs";
+            configureSliderRanges();
+            updateHeightInputsFromState();
+            updateWeightInputsFromState();
+            updateUI();
+            showToast("Inputs reset to standard defaults.");
+        }
+
+        /* Core Calculation & UI Render Function */
+        function updateUI() {
+            // Calculate BMI = kg / (m^2)
+            const heightM = state.heightCm / 100;
+            const bmi = state.weightKg / (heightM * heightM);
+            const bmiFormatted = bmi.toFixed(1);
+
+            // Determine WHO Category & Colors
+            let category = "";
+            let badgeBg = "";
+            let colorHex = "";
+            let cardId = "";
+
+            if (bmi < 18.5) {
+                category = "Underweight";
+                badgeBg = "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border-blue-300/50";
+                colorHex = "#3b82f6";
+                cardId = "whoCardUnderweight";
+            } else if (bmi >= 18.5 && bmi < 25.0) {
+                category = "Normal Weight";
+                badgeBg = "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300/50";
+                colorHex = "#10b981";
+                cardId = "whoCardNormal";
+            } else if (bmi >= 25.0 && bmi < 30.0) {
+                category = "Overweight";
+                badgeBg = "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300/50";
+                colorHex = "#f59e0b";
+                cardId = "whoCardOverweight";
+            } else {
+                category = "Obese";
+                badgeBg = "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border-rose-300/50";
+                colorHex = "#ef4444";
+                cardId = "whoCardObese";
+            }
+
+            // Update Top Banner
+            document.getElementById('quickBmiVal').textContent = bmiFormatted;
+            document.getElementById('quickBmiBadge').innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-900"></span> ${category}`;
+            document.getElementById('quickBmiDesc').textContent = `Status: ${category}`;
+
+            // Update Right Gauge & Live Display
+            document.getElementById('bmiNumberDisplay').textContent = bmiFormatted;
+            const badgeElem = document.getElementById('bmiCategoryBadge');
+            badgeElem.className = `inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-extrabold mt-3 border ${badgeBg}`;
+            badgeElem.innerHTML = `<i class="fa-solid fa-circle text-[8px]"></i> ${category}`;
+
+            // Gauge Rotation Mapping: BMI 12 -> -90deg, BMI 40 -> +90deg
+            const minBmi = 12;
+            const maxBmi = 40;
+            const clampedBmi = Math.max(minBmi, Math.min(maxBmi, bmi));
+            const angleDeg = ((clampedBmi - minBmi) / (maxBmi - minBmi)) * 180 - 90;
+            document.getElementById('gaugeNeedleGroup').style.transform = `rotate(${angleDeg}deg)`;
+
+            // Spectrum Bar Position Mapping (0% to 100%)
+            const spectrumPercent = Math.max(0, Math.min(100, Math.round(((clampedBmi - minBmi) / (maxBmi - minBmi)) * 100)));
+            document.getElementById('spectrumMarker').style.left = `calc(${spectrumPercent}% - 5px)`;
+            document.getElementById('spectrumPercentText').textContent = `${spectrumPercent}%`;
+
+            // Calculate Healthy Target Weight Range (BMI 18.5 to 24.9)
+            const minHealthyKg = 18.5 * (heightM * heightM);
+            const maxHealthyKg = 24.9 * (heightM * heightM);
+
+            if (state.unit === 'metric') {
+                document.getElementById('healthyWeightText').textContent = `${minHealthyKg.toFixed(1)} - ${maxHealthyKg.toFixed(1)} kg`;
+            } else {
+                const minHealthyLbs = Math.round(minHealthyKg * 2.20462);
+                const maxHealthyLbs = Math.round(maxHealthyKg * 2.20462);
+                document.getElementById('healthyWeightText').textContent = `${minHealthyLbs} - ${maxHealthyLbs} lbs`;
+            }
+
+            // Highlight corresponding WHO Card
+            ['whoCardUnderweight', 'whoCardNormal', 'whoCardOverweight', 'whoCardObese'].forEach(id => {
+                const card = document.getElementById(id);
+                if (id === cardId) {
+                    card.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50/50', 'dark:bg-emerald-950/30');
+                } else {
+                    card.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50/50', 'dark:bg-emerald-950/30');
+                }
+            });
+
+            // Tailor Health Insights
+            updateInsights(bmi, category);
+        }
+
+        /* Dynamic Personal Health Recommendations */
+        function updateInsights(bmi, category) {
+            const waterTip = document.getElementById('waterTipText');
+            const actTip = document.getElementById('activityTipText');
+
+            // Hydration calculation: approx 35ml per kg
+            const waterLiters = (state.weightKg * 0.035).toFixed(1);
+            waterTip.textContent = `Recommended hydration target: ~${waterLiters} Liters (${Math.round(waterLiters * 33.814)} oz) of daily water intake.`;
+
+            if (category === "Underweight") {
+                actTip.textContent = "Focus on strength training and caloric intake with nutrient-dense meals to build healthy muscle mass.";
+            } else if (category === "Normal Weight") {
+                actTip.textContent = "Maintain 150+ minutes of moderate exercise weekly along with balanced protein and fiber intake.";
+            } else if (category === "Overweight") {
+                actTip.textContent = "Combine cardiovascular exercises (e.g. brisk walking) with moderate caloric deficit for sustainable balance.";
+            } else {
+                actTip.textContent = "Consult a health professional for personalized metabolic screening and structured fitness planning.";
+            }
+        }
+
+        /* Save Current BMI Result to LocalStorage */
+        function saveCurrentBMI() {
+            const heightM = state.heightCm / 100;
+            const bmi = parseFloat((state.weightKg / (heightM * heightM)).toFixed(1));
+            
+            const record = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }),
+                time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                bmi: bmi,
+                weightKg: state.weightKg,
+                unit: state.unit
+            };
+
+            state.history.unshift(record);
+            if (state.history.length > 15) state.history.pop(); // keep last 15
+            saveHistoryToStorage();
+            renderHistoryTable();
+            updateChart();
+            showToast("BMI Measurement saved to local history!");
+        }
+
+        function loadHistoryFromStorage() {
+            try {
+                const stored = localStorage.getItem('fitgauge_history');
+                if (stored) {
+                    state.history = JSON.parse(stored);
+                } else {
+                    // Pre-fill with mock records for rich visual demo
+                    state.history = [
+                        { id: 101, date: 'Aug 10', time: '09:30 AM', bmi: 24.2, weightKg: 74, unit: 'metric' },
+                        { id: 102, date: 'Aug 24', time: '08:15 AM', bmi: 23.5, weightKg: 72, unit: 'metric' },
+                        { id: 103, date: 'Sep 02', time: '07:45 AM', bmi: 22.9, weightKg: 70, unit: 'metric' }
+                    ];
+                }
+            } catch (e) {
+                state.history = [];
+            }
+            renderHistoryTable();
+        }
+
+        function saveHistoryToStorage() {
+            try {
+                localStorage.setItem('fitgauge_history', JSON.stringify(state.history));
+            } catch (e) {}
+        }
+
+        function deleteHistoryItem(id) {
+            state.history = state.history.filter(item => item.id !== id);
+            saveHistoryToStorage();
+            renderHistoryTable();
+            updateChart();
+            showToast("Record removed.");
+        }
+
+        function confirmClearHistory() {
+            if (state.history.length === 0) {
+                showToast("History log is already empty.");
+                return;
+            }
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+        }
+
+        function executeClearHistory() {
+            state.history = [];
+            saveHistoryToStorage();
+            renderHistoryTable();
+            updateChart();
+            closeModal();
+            showToast("All historical entries deleted.");
+        }
+
+        /* Render History Data Table */
+        function renderHistoryTable() {
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+
+            if (state.history.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400">No saved history entries yet.</td></tr>`;
+                return;
+            }
+
+            state.history.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors";
+
+                const weightDisplay = state.unit === 'metric' 
+                    ? `${item.weightKg.toFixed(1)} kg` 
+                    : `${Math.round(item.weightKg * 2.20462)} lbs`;
+
+                tr.innerHTML = `
+                    <td class="p-3 text-slate-600 dark:text-slate-300 font-medium">
+                        <div>${item.date}</div>
+                        <div class="text-[10px] text-slate-400">${item.time}</div>
+                    </td>
+                    <td class="p-3 font-semibold text-slate-800 dark:text-slate-200">${weightDisplay}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded font-extrabold text-xs bg-slate-100 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400">
+                            ${item.bmi}
+                        </span>
+                    </td>
+                    <td class="p-3 text-right">
+                        <button onclick="deleteHistoryItem(${item.id})" class="text-slate-400 hover:text-rose-500 transition-colors p-1">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('historyChart').getContext('2d');
+            
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+
+            historyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: state.history.slice().reverse().map(h => h.date),
+                    datasets: [{
+                        label: 'BMI Trend',
+                        data: state.history.slice().reverse().map(h => h.bmi),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: '#10b981',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#1e293b',
+                            titleFont: { family: 'Plus Jakarta Sans', size: 12 },
+                            bodyFont: { family: 'Plus Jakarta Sans', size: 12 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: gridColor },
+                            ticks: { font: { family: 'Plus Jakarta Sans', size: 10 } }
+                        },
+                        y: {
+                            grid: { color: gridColor },
+                            suggestedMin: 15,
+                            suggestedMax: 35,
+                            ticks: { font: { family: 'Plus Jakarta Sans', size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart() {
+            if (!historyChart) return;
+            const reversed = state.history.slice().reverse();
+            historyChart.data.labels = reversed.map(h => h.date);
+            historyChart.data.datasets[0].data = reversed.map(h => h.bmi);
+            historyChart.update();
+        }
+
+        /* Notification Toast Engine */
+        function showToast(message) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-3 rounded-2xl shadow-xl text-xs font-bold flex items-center gap-2 transition-all duration-300 transform translate-y-4 opacity-0 pointer-events-auto border border-slate-700 dark:border-slate-300";
+            toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 dark:text-emerald-600"></i> ${message}`;
+            
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

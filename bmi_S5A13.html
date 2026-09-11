@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOVIET SYNDICATE // OPERATIVE PHYSICAL ASSESSMENT (BM-99)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Soviet Industrial / Stencil Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Russo+One&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        russo: ['Russo One', 'sans-serif'],
+                        oswald: ['Oswald', 'sans-serif'],
+                        mono: ['Share Tech Mono', 'monospace'],
+                    },
+                    colors: {
+                        syndicate: {
+                            950: '#090a0f',
+                            900: '#121620',
+                            800: '#1e2433',
+                            700: '#2d364d',
+                            600: '#414e6e',
+                        },
+                        sovietRed: {
+                            400: '#f87171',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                            800: '#991b1b',
+                        },
+                        ironGold: {
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #090a0f;
+            color: #e2e8f0;
+            background-image: 
+                radial-gradient(circle at 50% 20%, rgba(185, 28, 28, 0.15) 0%, rgba(9, 10, 15, 0.98) 80%),
+                linear-gradient(0deg, rgba(18, 22, 32, 0.8), rgba(18, 22, 32, 0.8));
+            background-attachment: fixed;
+        }
+
+        /* Industrial Steel & Crimson Border Frame */
+        .syndicate-border {
+            position: relative;
+            border: 2px solid #b91c1c;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9), 0 0 15px rgba(185, 28, 28, 0.25);
+        }
+
+        .syndicate-border::before, .syndicate-border::after {
+            content: '★';
+            position: absolute;
+            color: #ef4444;
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        .syndicate-border::before {
+            top: -7px;
+            left: -6px;
+        }
+
+        .syndicate-border::after {
+            bottom: -7px;
+            right: -6px;
+        }
+
+        /* Industrial Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: #1e2433;
+            border: 1px solid #7f1d1d;
+            height: 10px;
+            border-radius: 2px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 22px;
+            width: 14px;
+            background: linear-gradient(180deg, #ef4444 0%, #991b1b 100%);
+            cursor: pointer;
+            border: 1px solid #f87171;
+            border-radius: 2px;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #121620;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #7f1d1d;
+            border-radius: 2px;
+            border: 1px solid #ef4444;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ef4444;
+        }
+    </style>
+</head>
+<body class="font-mono min-h-screen flex flex-col justify-between p-3 sm:p-6 relative select-none">
+
+    <!-- TOP SYNDICATE HEADER -->
+    <header class="max-w-6xl w-full mx-auto mb-6 syndicate-border bg-syndicate-900/95 p-4 sm:p-5 rounded backdrop-blur-md">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 rounded bg-sovietRed-900/40 border-2 border-sovietRed-600 flex items-center justify-center text-sovietRed-500 text-2xl shadow-[0_0_12px_rgba(220,38,38,0.4)] font-russo">
+                    ★
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-wider text-sovietRed-500 font-russo uppercase flex items-center gap-2">
+                        <span>SOVIET SYNDICATE // BM-99 ASSESSMENT</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 font-mono tracking-widest">BRATVA OPERATIVE STRENGTH & COMBAT READINESS METRIC</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4 text-xs font-mono w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 border-syndicate-700 pt-2 sm:pt-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-sovietRed-400">AUDIO FEED:</span>
+                    <button id="soundToggleBtn" onclick="toggleSound()" class="px-3 py-1 bg-syndicate-800 text-sovietRed-400 border border-sovietRed-600/60 rounded hover:bg-syndicate-700 transition">
+                        SOUNDS [ON]
+                    </button>
+                </div>
+                <div class="text-right">
+                    <span class="text-slate-400">SECTOR REALM:</span>
+                    <span class="text-sovietRed-500 font-bold">MOSCOW-9</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="max-w-6xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
+        
+        <!-- LEFT PANEL: OPERATIVE METRICS INPUT -->
+        <section class="lg:col-span-5 syndicate-border bg-syndicate-900/90 p-5 sm:p-6 rounded flex flex-col justify-between">
+            <div>
+                <div class="flex justify-between items-center border-b border-syndicate-700 pb-3 mb-5">
+                    <h2 class="text-lg font-bold text-sovietRed-500 tracking-wide font-russo flex items-center gap-2">
+                        <span>☭ OPERATIVE PARAMETERS</span>
+                    </h2>
+                    <span class="text-xs font-mono bg-syndicate-800 text-sovietRed-400 px-2.5 py-1 rounded border border-sovietRed-700">CLASSIFIED</span>
+                </div>
+
+                <!-- UNIT SYSTEM SELECTOR -->
+                <div class="mb-6">
+                    <label class="block text-xs font-mono text-slate-400 mb-2 uppercase tracking-wider">Measurement Protocol</label>
+                    <div class="grid grid-cols-2 gap-2 bg-syndicate-800 p-1 rounded border border-syndicate-700">
+                        <button id="metricBtn" onclick="setUnitSystem('metric')" class="py-2 text-xs font-mono font-bold rounded transition border border-sovietRed-600 bg-syndicate-700 text-sovietRed-400">
+                            METRIC (CM / KG)
+                        </button>
+                        <button id="imperialBtn" onclick="setUnitSystem('imperial')" class="py-2 text-xs font-mono font-bold rounded transition border border-transparent text-slate-400 hover:text-white">
+                            IMPERIAL (FT-IN / LBS)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- OPERATIVE TITLE & AGE SELECTION -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-mono text-slate-400 mb-2 uppercase">Operative Title</label>
+                        <select id="genderSelect" onchange="playClickSound()" class="w-full bg-syndicate-800 text-slate-200 border border-syndicate-600 rounded p-2 text-sm focus:border-sovietRed-500 outline-none font-mono">
+                            <option value="male">ENFORCER / BRIGADIER</option>
+                            <option value="female">COURIER / OPERATIVE</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-mono text-slate-400 mb-2 uppercase">Age in Years</label>
+                        <input type="number" id="ageInput" value="32" min="18" max="80" onchange="playClickSound()" class="w-full bg-syndicate-800 text-slate-200 border border-syndicate-600 rounded p-2 text-sm focus:border-sovietRed-500 outline-none font-mono">
+                    </div>
+                </div>
+
+                <!-- HEIGHT INPUT CONTAINER -->
+                <div class="mb-6">
+                    <!-- Metric Height -->
+                    <div id="metricHeightBox">
+                        <div class="flex justify-between text-xs font-mono mb-2">
+                            <span class="text-slate-300 uppercase">Height (Centimeters)</span>
+                            <span class="text-sovietRed-400 font-bold"><span id="heightValue">182</span> CM</span>
+                        </div>
+                        <input type="range" id="heightSlider" min="130" max="220" value="182" class="w-full mb-2" oninput="updateMetrics()">
+                        <div class="flex justify-between text-[11px] text-slate-500 font-mono">
+                            <span>130 CM</span>
+                            <span>175 CM</span>
+                            <span>220 CM</span>
+                        </div>
+                    </div>
+
+                    <!-- Imperial Height -->
+                    <div id="imperialHeightBox" class="hidden">
+                        <label class="block text-xs font-mono text-slate-300 mb-2 uppercase">Height (Feet & Inches)</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <span class="text-[10px] text-sovietRed-400 font-mono block mb-1">FEET</span>
+                                <input type="number" id="feetInput" value="6" min="3" max="7" oninput="updateMetrics()" class="w-full bg-syndicate-800 text-slate-200 border border-syndicate-600 rounded p-2 text-sm focus:border-sovietRed-500 outline-none font-mono">
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-sovietRed-400 font-mono block mb-1">INCHES</span>
+                                <input type="number" id="inchesInput" value="0" min="0" max="11" oninput="updateMetrics()" class="w-full bg-syndicate-800 text-slate-200 border border-syndicate-600 rounded p-2 text-sm focus:border-sovietRed-500 outline-none font-mono">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WEIGHT INPUT CONTAINER -->
+                <div class="mb-6">
+                    <div class="flex justify-between text-xs font-mono mb-2">
+                        <span class="text-slate-300 uppercase" id="weightLabel">Weight (Kilograms)</span>
+                        <span class="text-sovietRed-400 font-bold"><span id="weightValue">85</span> <span id="weightUnitText">KG</span></span>
+                    </div>
+                    <input type="range" id="weightSlider" min="40" max="200" value="85" class="w-full mb-2" oninput="updateMetrics()">
+                    <div class="flex justify-between text-[11px] text-slate-500 font-mono" id="weightScale">
+                        <span>40 KG</span>
+                        <span>120 KG</span>
+                        <span>200 KG</span>
+                    </div>
+                </div>
+
+                <!-- SYNDICATE DUTY REGIMEN -->
+                <div class="mb-6">
+                    <label class="block text-xs font-mono text-slate-400 mb-2 uppercase">Operative Operational Regimen</label>
+                    <select id="activitySelect" onchange="playClickSound()" class="w-full bg-syndicate-800 text-slate-200 border border-syndicate-600 rounded p-2 text-sm focus:border-sovietRed-500 outline-none font-mono">
+                        <option value="1.2">BUNKER WATCH (Desk / Low Physical Duty)</option>
+                        <option value="1.375" selected>PATROL DRILL (Light Combat Training 1-3x/wk)</option>
+                        <option value="1.55">UNDERGROUND BRAWLING (Tactical Drills 3-5x/wk)</option>
+                        <option value="1.725">SIBERIAN LABOR (Intense Strength Conditioning 6-7x/wk)</option>
+                        <option value="1.9">RED STAR ENFORCER (Extreme Hardcore Combat / 2x Daily)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="runSyndicateDiagnostic()" class="w-full py-3.5 bg-gradient-to-r from-sovietRed-800 via-sovietRed-600 to-sovietRed-800 hover:from-sovietRed-700 hover:to-sovietRed-500 text-white font-russo font-bold tracking-widest uppercase rounded border border-sovietRed-400 shadow-[0_0_15px_rgba(220,38,38,0.4)] active:scale-[0.99] transition flex items-center justify-center gap-2 mt-4">
+                <span id="spinIcon" class="hidden animate-spin">☭</span>
+                <span>EXECUTE PHYSICAL ASSESSMENT</span>
+            </button>
+        </section>
+
+        <!-- RIGHT PANEL: OPERATIVE READINESS DISPLAY -->
+        <section class="lg:col-span-7 flex flex-col gap-6">
+            
+            <!-- READOUT CARD -->
+            <div class="syndicate-border bg-syndicate-900/95 p-5 sm:p-6 rounded relative overflow-hidden flex-grow flex flex-col justify-between">
+                
+                <div>
+                    <!-- STATUS HEADER -->
+                    <div class="flex flex-wrap justify-between items-center border-b border-syndicate-700 pb-3 mb-6 gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-mono text-sovietRed-400">OPERATIVE COMBAT & MOBILITY SPECTRUM</span>
+                        </div>
+                        <div id="readinessBadge" class="px-3 py-1 bg-emerald-950/80 border border-emerald-500 text-emerald-400 text-xs font-mono font-bold tracking-wider rounded">
+                            CLASSIFICATION: OPTIMAL ENFORCER
+                        </div>
+                    </div>
+
+                    <!-- BMI VALUE & VISUAL HUD GAUGE -->
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center mb-6">
+                        <!-- Score Box -->
+                        <div class="md:col-span-5 bg-syndicate-800/90 p-5 rounded border border-sovietRed-600/50 text-center relative shadow-inner">
+                            <span class="text-[10px] font-mono text-slate-400 uppercase tracking-widest block mb-1">COMBAT MASS INDEX (BMI)</span>
+                            <div id="bmiDisplay" class="text-5xl font-bold font-russo text-sovietRed-500 my-1 tracking-wider drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]">
+                                25.7
+                            </div>
+                            <span id="bmiStatusText" class="text-xs font-mono font-bold uppercase tracking-wider text-amber-400 block mt-1">
+                                [HEAVY ENFORCER MASS]
+                            </span>
+                        </div>
+
+                        <!-- Gauge Arc / Spectrum Meter -->
+                        <div class="md:col-span-7 flex flex-col justify-center">
+                            <div class="flex justify-between text-xs font-mono text-slate-400 mb-1">
+                                <span>SPECTRUM GAUGE</span>
+                                <span id="spectrumPointer" class="text-sovietRed-400 font-bold">25.7 Index</span>
+                            </div>
+
+                            <!-- Visual Bar Spectrum -->
+                            <div class="relative w-full h-6 bg-syndicate-800 rounded border border-syndicate-700 p-0.5 flex gap-1 mb-2 shadow-inner">
+                                <div class="h-full w-[22%] bg-sky-700/80 rounded-sm relative group" title="Underweight (< 18.5)">
+                                    <span class="text-[9px] font-mono text-white absolute inset-0 flex items-center justify-center font-bold">DEPLETED</span>
+                                </div>
+                                <div class="h-full w-[33%] bg-emerald-700/80 rounded-sm relative group" title="Optimal Readiness (18.5 - 24.9)">
+                                    <span class="text-[9px] font-mono text-white font-bold absolute inset-0 flex items-center justify-center">OPTIMAL</span>
+                                </div>
+                                <div class="h-full w-[20%] bg-amber-700/80 rounded-sm relative group" title="Overweight (25 - 29.9)">
+                                    <span class="text-[9px] font-mono text-white font-bold absolute inset-0 flex items-center justify-center">HEAVY</span>
+                                </div>
+                                <div class="h-full w-[25%] bg-rose-800/80 rounded-sm relative group" title="Obese (30+)">
+                                    <span class="text-[9px] font-mono text-white font-bold absolute inset-0 flex items-center justify-center">CRITICAL</span>
+                                </div>
+
+                                <!-- Dynamic Indicator Triangle -->
+                                <div id="sliderMarker" class="absolute -bottom-3.5 transform -translate-x-1/2 transition-all duration-500 text-sovietRed-500 text-sm" style="left: 52%;">
+                                    ▲
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between text-[10px] font-mono text-slate-500 mt-2">
+                                <span>15.0</span>
+                                <span>18.5</span>
+                                <span>25.0</span>
+                                <span>30.0</span>
+                                <span>40.0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DETAILED VITAL METRICS GRID -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+                        <div class="bg-syndicate-800/60 p-3 rounded border border-syndicate-700">
+                            <span class="text-[10px] font-mono text-slate-400 block uppercase">Target Combat Mass</span>
+                            <span id="targetWeightRange" class="text-sm font-mono font-bold text-slate-100 block mt-0.5">61 - 82 KG</span>
+                            <span class="text-[9px] font-mono text-slate-500">Standard Enforcer Spec</span>
+                        </div>
+
+                        <div class="bg-syndicate-800/60 p-3 rounded border border-syndicate-700">
+                            <span class="text-[10px] font-mono text-slate-400 block uppercase">Base Energy Need</span>
+                            <span id="bmrDisplay" class="text-sm font-mono font-bold text-sky-400 block mt-0.5">1,840 KCAL</span>
+                            <span class="text-[9px] font-mono text-slate-500">Resting Metabolic Cost</span>
+                        </div>
+
+                        <div class="bg-syndicate-800/60 p-3 rounded border border-syndicate-700">
+                            <span class="text-[10px] font-mono text-slate-400 block uppercase">Daily Ration Allowance</span>
+                            <span id="tdeeDisplay" class="text-sm font-mono font-bold text-amber-400 block mt-0.5">2,530 KCAL</span>
+                            <span class="text-[9px] font-mono text-slate-500">Active Field Intake</span>
+                        </div>
+
+                        <div class="bg-syndicate-800/60 p-3 rounded border border-syndicate-700">
+                            <span class="text-[10px] font-mono text-slate-400 block uppercase">Water / Hydration</span>
+                            <span id="waterDisplay" class="text-sm font-mono font-bold text-cyan-400 block mt-0.5">3.0 L / DAY</span>
+                            <span class="text-[9px] font-mono text-slate-500">Field Canteen Ratio</span>
+                        </div>
+
+                        <div class="bg-syndicate-800/60 p-3 rounded border border-syndicate-700">
+                            <span class="text-[10px] font-mono text-slate-400 block uppercase">Prime Agile Weight</span>
+                            <span id="primeWeightDisplay" class="text-sm font-mono font-bold text-sovietRed-400 block mt-0.5">71.8 KG</span>
+                            <span class="text-[9px] font-mono text-slate-500">Peak Agility Weight</span>
+                        </div>
+
+                        <div class="bg-syndicate-800/60 p-3 rounded border border-syndicate-700">
+                            <span class="text-[10px] font-mono text-slate-400 block uppercase">Est. Body Fat Ratio</span>
+                            <span id="bodyFatEstDisplay" class="text-sm font-mono font-bold text-slate-100 block mt-0.5">17.2 %</span>
+                            <span class="text-[9px] font-mono text-slate-500">Estimated Composition</span>
+                        </div>
+                    </div>
+
+                    <!-- SYNDICATE BOSS DECREE BOX -->
+                    <div class="bg-syndicate-800/80 p-4 rounded border-l-4 border-sovietRed-600 border-syndicate-700">
+                        <h3 class="text-xs font-mono font-bold text-sovietRed-400 uppercase tracking-wider mb-1 flex items-center gap-2">
+                            <span>☭ SYNDICATE COMMAND DECREE & TRAINING ADVICE</span>
+                        </h3>
+                        <p id="tacticalAdviceText" class="text-xs font-mono text-slate-300 leading-relaxed">
+                            Operative exhibits heavy enforcer mass. Maintain heavy bag conditioning, tactical grappling, and balance caloric intake with mandatory Siberian drill sessions.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- ACTION BUTTONS BELOW READOUT -->
+                <div class="mt-6 pt-4 border-t border-syndicate-700 flex flex-wrap justify-between items-center gap-3">
+                    <button onclick="saveToSyndicateLog()" class="px-4 py-2 bg-syndicate-800 hover:bg-syndicate-700 border border-sovietRed-600/60 text-xs font-mono text-sovietRed-400 rounded flex items-center gap-2 transition">
+                        <span>★ LOG TO SYNDICATE DOSSIER</span>
+                    </button>
+
+                    <button onclick="copySyndicateReport()" class="px-4 py-2 bg-syndicate-800 hover:bg-syndicate-700 border border-sovietRed-600/60 text-xs font-mono text-slate-200 rounded flex items-center gap-2 transition">
+                        <span>📋 COPY CLASSIFIED DOSSIER</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- LOG HISTORICAL RECORDS -->
+    <section class="max-w-6xl w-full mx-auto mt-6 syndicate-border bg-syndicate-900/90 p-5 rounded">
+        <div class="flex justify-between items-center border-b border-syndicate-700 pb-3 mb-4">
+            <h2 class="text-sm font-bold font-russo text-sovietRed-500 uppercase tracking-wider flex items-center gap-2">
+                <span>☭ SYNDICATE DOSSIER ARCHIVES // SECTOR RECORDS</span>
+            </h2>
+            <button onclick="clearSyndicateLogs()" class="text-xs font-mono text-rose-400 hover:underline">
+                PURGE DOSSIERS
+            </button>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left font-mono text-xs">
+                <thead>
+                    <tr class="border-b border-syndicate-700 text-sovietRed-400">
+                        <th class="py-2 px-3">TIMESTAMP</th>
+                        <th class="py-2 px-3">HEIGHT</th>
+                        <th class="py-2 px-3">MASS</th>
+                        <th class="py-2 px-3">BMI INDEX</th>
+                        <th class="py-2 px-3">SECTOR CLASSIFICATION</th>
+                    </tr>
+                </thead>
+                <tbody id="logTableBody" class="divide-y divide-syndicate-800 text-slate-300">
+                    <!-- Dynamic logs filled by JS -->
+                    <tr>
+                        <td colspan="5" class="py-4 text-center text-slate-500 italic">No operative records logged. Execute diagnostic and select 'LOG TO SYNDICATE DOSSIER'.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- NOTIFICATION TOAST MODAL -->
+    <div id="toast" class="fixed bottom-6 right-6 syndicate-border bg-syndicate-950 text-sovietRed-400 px-4 py-3 rounded shadow-2xl font-mono text-xs flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50">
+        <span class="text-sovietRed-500 text-lg">★</span>
+        <span id="toastMessage">OPERATIVE RECORD INSCRIBED IN SYNDICATE DOSSIER.</span>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="max-w-6xl w-full mx-auto mt-6 text-center text-[11px] font-mono text-slate-500 py-2">
+        <p>SOVIET SYNDICATE SECTOR-9 // PHYSICAL ASSESSMENT SYSTEM // FOR COMBAT READINESS METRICS ONLY</p>
+    </footer>
+
+    <script>
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundToggleBtn');
+            btn.innerText = soundEnabled ? 'SOUNDS [ON]' : 'SOUNDS [OFF]';
+            btn.classList.toggle('text-sovietRed-400', soundEnabled);
+            btn.classList.toggle('text-syndicate-600', !soundEnabled);
+            if (soundEnabled) playClickSound();
+        }
+
+        /* Industrial Metallic Click Sound Effect */
+        function playClickSound() {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.05);
+            } catch (e) {}
+        }
+
+        /* Industrial Siren Synth Effect */
+        function playSirenSound() {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.15);
+                osc.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } catch (e) {}
+        }
+
+        // Global State
+        let currentUnitSystem = 'metric';
+
+        function setUnitSystem(system) {
+            if (currentUnitSystem === system) return;
+            playClickSound();
+            currentUnitSystem = system;
+
+            const metricBtn = document.getElementById('metricBtn');
+            const imperialBtn = document.getElementById('imperialBtn');
+            const metricBox = document.getElementById('metricHeightBox');
+            const imperialBox = document.getElementById('imperialHeightBox');
+
+            if (system === 'metric') {
+                metricBtn.className = 'py-2 text-xs font-mono font-bold rounded transition border border-sovietRed-600 bg-syndicate-700 text-sovietRed-400';
+                imperialBtn.className = 'py-2 text-xs font-mono font-bold rounded transition border border-transparent text-slate-400 hover:text-white';
+                metricBox.classList.remove('hidden');
+                imperialBox.classList.add('hidden');
+
+                document.getElementById('weightLabel').innerText = 'Weight (Kilograms)';
+                document.getElementById('weightUnitText').innerText = 'KG';
+                document.getElementById('weightSlider').min = 40;
+                document.getElementById('weightSlider').max = 200;
+                document.getElementById('weightSlider').value = 85;
+                document.getElementById('weightScale').innerHTML = '<span>40 KG</span><span>120 KG</span><span>200 KG</span>';
+            } else {
+                imperialBtn.className = 'py-2 text-xs font-mono font-bold rounded transition border border-sovietRed-600 bg-syndicate-700 text-sovietRed-400';
+                metricBtn.className = 'py-2 text-xs font-mono font-bold rounded transition border border-transparent text-slate-400 hover:text-white';
+                imperialBox.classList.remove('hidden');
+                metricBox.classList.add('hidden');
+
+                document.getElementById('weightLabel').innerText = 'Weight (Pounds)';
+                document.getElementById('weightUnitText').innerText = 'LBS';
+                document.getElementById('weightSlider').min = 90;
+                document.getElementById('weightSlider').max = 440;
+                document.getElementById('weightSlider').value = 187;
+                document.getElementById('weightScale').innerHTML = '<span>90 LBS</span><span>265 LBS</span><span>440 LBS</span>';
+            }
+
+            updateMetrics();
+        }
+
+        function getStandardizedValues() {
+            let heightMeters = 1.82;
+            let weightKg = 85;
+
+            if (currentUnitSystem === 'metric') {
+                const heightCm = parseFloat(document.getElementById('heightSlider').value);
+                weightKg = parseFloat(document.getElementById('weightSlider').value);
+                heightMeters = heightCm / 100;
+            } else {
+                const feet = parseFloat(document.getElementById('feetInput').value) || 0;
+                const inches = parseFloat(document.getElementById('inchesInput').value) || 0;
+                const totalInches = (feet * 12) + inches;
+                heightMeters = totalInches * 0.0254;
+
+                const weightLbs = parseFloat(document.getElementById('weightSlider').value);
+                weightKg = weightLbs * 0.453592;
+            }
+
+            return { heightMeters, weightKg };
+        }
+
+        function updateMetrics() {
+            playClickSound();
+
+            if (currentUnitSystem === 'metric') {
+                document.getElementById('heightValue').innerText = document.getElementById('heightSlider').value;
+            }
+            document.getElementById('weightValue').innerText = document.getElementById('weightSlider').value;
+
+            calculateAllValues();
+        }
+
+        function calculateAllValues() {
+            const { heightMeters, weightKg } = getStandardizedValues();
+            const age = parseInt(document.getElementById('ageInput').value) || 32;
+            const gender = document.getElementById('genderSelect').value;
+            const activityMultiplier = parseFloat(document.getElementById('activitySelect').value);
+
+            if (heightMeters <= 0 || weightKg <= 0) return;
+
+            // BMI Calculation
+            const bmi = weightKg / (heightMeters * heightMeters);
+            const formattedBmi = bmi.toFixed(1);
+
+            document.getElementById('bmiDisplay').innerText = formattedBmi;
+            document.getElementById('spectrumPointer').innerText = formattedBmi + ' Index';
+
+            // Calculate Spectrum Indicator Position
+            let percentage = ((bmi - 15) / (40 - 15)) * 100;
+            percentage = Math.max(2, Math.min(98, percentage));
+            document.getElementById('sliderMarker').style.left = percentage + '%';
+
+            // Target Healthy Weight Range
+            const minHealthyKg = 18.5 * (heightMeters * heightMeters);
+            const maxHealthyKg = 24.9 * (heightMeters * heightMeters);
+            const primeKg = 21.7 * (heightMeters * heightMeters);
+
+            if (currentUnitSystem === 'metric') {
+                document.getElementById('targetWeightRange').innerText = `${minHealthyKg.toFixed(0)} - ${maxHealthyKg.toFixed(0)} KG`;
+                document.getElementById('primeWeightDisplay').innerText = `${primeKg.toFixed(1)} KG`;
+            } else {
+                document.getElementById('targetWeightRange').innerText = `${(minHealthyKg * 2.20462).toFixed(0)} - ${(maxHealthyKg * 2.20462).toFixed(0)} LBS`;
+                document.getElementById('primeWeightDisplay').innerText = `${(primeKg * 2.20462).toFixed(1)} LBS`;
+            }
+
+            // BMR Calculation
+            let bmr = (10 * weightKg) + (6.25 * (heightMeters * 100)) - (5 * age);
+            if (gender === 'male') {
+                bmr += 5;
+            } else {
+                bmr -= 161;
+            }
+
+            const tdee = bmr * activityMultiplier;
+            const waterLiters = (weightKg * 0.035).toFixed(1);
+
+            // Body Fat % Estimation
+            const genderFactor = (gender === 'male') ? 1 : 0;
+            let bodyFat = (1.20 * bmi) + (0.23 * age) - (10.8 * genderFactor) - 5.4;
+            bodyFat = Math.max(3, Math.min(50, bodyFat)).toFixed(1);
+
+            document.getElementById('bmrDisplay').innerText = Math.round(bmr).toLocaleString() + ' KCAL';
+            document.getElementById('tdeeDisplay').innerText = Math.round(tdee).toLocaleString() + ' KCAL';
+            document.getElementById('waterDisplay').innerText = waterLiters + ' L / DAY';
+            document.getElementById('bodyFatEstDisplay').innerText = bodyFat + ' %';
+
+            updateStatusAndAdvice(bmi);
+        }
+
+        function updateStatusAndAdvice(bmi) {
+            const badge = document.getElementById('readinessBadge');
+            const statusText = document.getElementById('bmiStatusText');
+            const display = document.getElementById('bmiDisplay');
+            const advice = document.getElementById('tacticalAdviceText');
+
+            if (bmi < 18.5) {
+                badge.className = 'px-3 py-1 bg-sky-950/80 border border-sky-400 text-sky-300 text-xs font-mono font-bold tracking-wider rounded';
+                badge.innerText = 'CLASSIFICATION: RATION DEFICIT';
+                statusText.innerText = '[DEPLETED COMBAT MASS]';
+                statusText.className = 'text-xs font-mono font-bold uppercase tracking-wider text-sky-400 block mt-1';
+                display.className = 'text-5xl font-bold font-russo text-sky-400 my-1 tracking-wider drop-shadow-[0_0_10px_rgba(56,189,248,0.4)]';
+                advice.innerText = 'Operative is under standard physical weight spec. Increase daily ration intake, consume high-protein Soviet mess hall meals, and engage in progressive strength building.';
+            } else if (bmi >= 18.5 && bmi <= 24.9) {
+                badge.className = 'px-3 py-1 bg-emerald-950/80 border border-emerald-500 text-emerald-400 text-xs font-mono font-bold tracking-wider rounded';
+                badge.innerText = 'CLASSIFICATION: OPTIMAL ENFORCER';
+                statusText.innerText = '[PEAK SYNDICATE READINESS]';
+                statusText.className = 'text-xs font-mono font-bold uppercase tracking-wider text-emerald-400 block mt-1';
+                display.className = 'text-5xl font-bold font-russo text-sovietRed-500 my-1 tracking-wider drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]';
+                advice.innerText = 'Operative is in prime combat condition. Maintain tactical brawling drills, endurance marches in heavy gear, and balance daily caloric intake with active field duties.';
+            } else if (bmi >= 25.0 && bmi <= 29.9) {
+                badge.className = 'px-3 py-1 bg-amber-950/80 border border-amber-500 text-amber-400 text-xs font-mono font-bold tracking-wider rounded';
+                badge.innerText = 'CLASSIFICATION: HEAVY ENFORCER';
+                statusText.innerText = '[HEAVY MASS // SLIGHT AGILITY REDUCTION]';
+                statusText.className = 'text-xs font-mono font-bold uppercase tracking-wider text-amber-400 block mt-1';
+                display.className = 'text-5xl font-bold font-russo text-amber-400 my-1 tracking-wider drop-shadow-[0_0_10px_rgba(251,191,36,0.4)]';
+                advice.innerText = 'Operative carries heavy enforcer mass. Maintain heavy bag conditioning, tactical grappling, and balance caloric intake with mandatory Siberian drill sessions.';
+            } else {
+                badge.className = 'px-3 py-1 bg-rose-950/80 border border-rose-500 text-rose-400 text-xs font-mono font-bold tracking-wider rounded';
+                badge.innerText = 'CLASSIFICATION: CRITICAL ENCUMBRANCE';
+                statusText.innerText = '[HIGH HAZARD // OVERBURDENED MASS]';
+                statusText.className = 'text-xs font-mono font-bold uppercase tracking-wider text-rose-400 block mt-1';
+                display.className = 'text-5xl font-bold font-russo text-rose-400 my-1 tracking-wider drop-shadow-[0_0_10px_rgba(244,63,94,0.4)]';
+                advice.innerText = 'Critical mass detected. Direct order from Syndicate Medical Officer: reduce heavy banquet rations, implement low-impact cardio work, and report for physical re-qualification.';
+            }
+        }
+
+        function runSyndicateDiagnostic() {
+            playSirenSound();
+            const spinner = document.getElementById('spinIcon');
+            spinner.classList.remove('hidden');
+
+            setTimeout(() => {
+                spinner.classList.add('hidden');
+                calculateAllValues();
+                showToast("SYNDICATE ASSESSMENT COMPLETE.");
+            }, 300);
+        }
+
+        function saveToSyndicateLog() {
+            playClickSound();
+            const bmi = document.getElementById('bmiDisplay').innerText;
+            const status = document.getElementById('bmiStatusText').innerText;
+            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            let heightText = '';
+            let weightText = '';
+
+            if (currentUnitSystem === 'metric') {
+                heightText = document.getElementById('heightSlider').value + ' CM';
+                weightText = document.getElementById('weightSlider').value + ' KG';
+            } else {
+                const ft = document.getElementById('feetInput').value;
+                const inch = document.getElementById('inchesInput').value;
+                heightText = `${ft}'${inch}"`;
+                weightText = document.getElementById('weightSlider').value + ' LBS';
+            }
+
+            const entry = { timestamp, heightText, weightText, bmi, status };
+
+            let logs = JSON.parse(localStorage.getItem('syndicate_bmi_logs') || '[]');
+            logs.unshift(entry);
+            if (logs.length > 8) logs = logs.slice(0, 8);
+
+            localStorage.setItem('syndicate_bmi_logs', JSON.stringify(logs));
+            renderLogs();
+            showToast("RECORD INSCRIBED IN SYNDICATE DOSSIER.");
+        }
+
+        function renderLogs() {
+            const tableBody = document.getElementById('logTableBody');
+            const logs = JSON.parse(localStorage.getItem('syndicate_bmi_logs') || '[]');
+
+            if (logs.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500 italic">No operative records logged. Execute diagnostic and select 'LOG TO SYNDICATE DOSSIER'.</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = logs.map(log => `
+                <tr class="hover:bg-syndicate-800/40 transition">
+                    <td class="py-2.5 px-3 text-sovietRed-400 font-bold">${log.timestamp}</td>
+                    <td class="py-2.5 px-3">${log.heightText}</td>
+                    <td class="py-2.5 px-3">${log.weightText}</td>
+                    <td class="py-2.5 px-3 font-bold">${log.bmi}</td>
+                    <td class="py-2.5 px-3 text-[11px]">${log.status}</td>
+                </tr>
+            `).join('');
+        }
+
+        function clearSyndicateLogs() {
+            playClickSound();
+            localStorage.removeItem('syndicate_bmi_logs');
+            renderLogs();
+            showToast("DOSSIER ARCHIVES PURGED.");
+        }
+
+        function copySyndicateReport() {
+            playClickSound();
+            const bmi = document.getElementById('bmiDisplay').innerText;
+            const badge = document.getElementById('readinessBadge').innerText;
+            const bmr = document.getElementById('bmrDisplay').innerText;
+            const tdee = document.getElementById('tdeeDisplay').innerText;
+            const target = document.getElementById('targetWeightRange').innerText;
+
+            const textReport = `======================================
+[SOVIET SYNDICATE // OPERATIVE DOSSIER]
+SECTOR STATUS: ${badge}
+COMBAT MASS INDEX (BMI): ${bmi}
+TARGET OPERATIVE MASS: ${target}
+RESTING METABOLIC RATE (BMR): ${bmr}
+DAILY RATION ALLOWANCE: ${tdee}
+TIMESTAMP: ${new Date().toLocaleString()}
+======================================`;
+
+            const tempInput = document.createElement('textarea');
+            tempInput.value = textReport;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            showToast("CLASSIFIED DOSSIER COPIED TO CLIPBOARD.");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            toastMsg.innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+
+        // Initialize on Window Load
+        window.onload = function() {
+            calculateAllValues();
+            renderLogs();
+        };
+    </script>
+</body>
+</html>
